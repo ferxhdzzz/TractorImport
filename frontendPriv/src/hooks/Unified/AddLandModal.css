@@ -1,0 +1,295 @@
+/* AddLandModal.css - Distribución en Grid y Estilo Verde para Formulario de Terrenos / Modales */
+
+.land-modal-overlay,
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.land-modal-card,
+.edit-modal-card {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 820px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 2.2rem;
+  animation: fadeInModal 0.25s ease-out;
+  box-sizing: border-box;
+}
+
+@keyframes fadeInModal {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.land-modal-header,
+.product-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #CDDACC; /* División verde suave */
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.land-modal-title,
+.modal-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1C4024; /* Verde oscuro elegante */
+  margin: 0;
+}
+
+.land-modal-close-btn,
+.product-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  color: #64748b;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.land-modal-close-btn:hover,
+.product-modal-close-btn:hover {
+  color: #1C4024;
+}
+
+/* Selector de Tipo de Venta (Tabs Toggle) */
+.type-sale-toggle {
+  display: flex;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px; /* Botones más cuadrados */
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  gap: 4px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px; /* Botón cuadrado */
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  color: #64748b;
+}
+
+.toggle-btn.active {
+  background-color: #4C8F3F; /* Verde medio principal */
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(76, 143, 63, 0.25);
+}
+
+/* Formulario en Grid 2 Columnas */
+.land-form-grid,
+.product-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.4rem;
+}
+
+.land-field-group,
+.product-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.land-field-group.full-width,
+.product-field-group.full-width {
+  grid-column: span 2;
+}
+
+.land-field-group label,
+.product-field-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* CAMPOS DE ENTRADA CON FONDO BLANCO Y BORDE SUAVE */
+.land-input-field,
+.input-field {
+  width: 100%;
+  padding: 0.68rem 0.95rem;
+  border-radius: 6px; /* Casillas con esquinas suavizadas */
+  border: 1px solid #cbd5e1;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background-color: #ffffff; /* Fondo blanco */
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.land-input-field:focus,
+.input-field:focus {
+  border-color: #1C4024; /* Verde oscuro al recibir foco */
+  box-shadow: 0 0 0 3px rgba(28, 64, 36, 0.15);
+  background-color: #ffffff;
+}
+
+.land-input-field[readOnly],
+.input-field[readOnly] {
+  background-color: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+textarea.land-input-field,
+textarea.input-field {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Vista Previa de Imágenes Editables */
+.edit-image-preview {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.img-container {
+  position: relative;
+}
+
+.editable-img {
+  width: 95px;
+  height: 95px;
+  object-fit: cover;
+  border: 2px solid #CDDACC;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.editable-img:hover {
+  border-color: #4C8F3F;
+  transform: scale(1.03);
+}
+
+.delete-img-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #1C4024;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s;
+}
+
+.delete-img-btn:hover {
+  background-color: #dc2626;
+}
+
+/* Acciones y Botones */
+.land-modal-actions,
+.buttons-roww {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.8rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.land-btn-cancel,
+.main-buttoon {
+  padding: 0.65rem 1.4rem;
+  border-radius: 6px; /* Más cuadrado */
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.land-btn-cancel:hover,
+.main-buttoon:hover {
+  background-color: #f1f5f9;
+}
+
+.land-btn-submit,
+.btn-primary {
+  padding: 0.65rem 1.6rem;
+  border-radius: 6px; /* Más cuadrado */
+  border: none;
+  background-color: #4C8F3F; /* Verde medio */
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.land-btn-submit:hover,
+.btn-primary:hover {
+  background-color: #1C4024; /* Verde oscuro al hacer hover */
+  box-shadow: 0 4px 12px rgba(28, 64, 36, 0.25);
+}
+
+.land-btn-submit:disabled,
+.btn-primary:disabled,
+.land-btn-cancel:disabled,
+.main-buttoon:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsivo */
+@media (max-width: 640px) {
+  .land-form-grid,
+  .product-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .land-field-group.full-width,
+  .product-field-group.full-width {
+    grid-column: span 1;
+  }
+
+  .land-modal-card,
+  .edit-modal-card {
+    padding: 1.25rem;
+  }
+}

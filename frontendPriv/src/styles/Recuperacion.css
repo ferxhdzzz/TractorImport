@@ -1,0 +1,97 @@
+/* src/pages/Recuperacion.css */
+.recover-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center; /* centrar la card horizontalmente */
+  align-items: center;
+  padding: 20px;
+}
+
+.recover-card {
+  background: white;
+  padding: 40px;
+  border-radius: 20px; /* esquinas más redondeadas */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  width: 100%;
+  position: relative; /* para posicionar el logo */
+}
+
+.recover-card .recover-title {
+  font-family: 'Lora', sans-serif;
+  font-size: 24px;
+  text-align: center; /* título centrado */
+  margin: 20px 0;
+}
+
+.recover-card .logo-wrapper {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
+
+.input-group-eye {
+  position: relative;
+  padding-right: 35px;
+}
+
+.input-group-eye input {
+  width: 100%;
+  padding-right: 15px;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 10px;
+  top: 45px;
+  padding-right: 35px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #9b9b9b;
+}
+
+.error-message {
+  color: red;
+  font-size: 12px;
+  margin-top: -2px;
+  margin-bottom: 12px;
+}
+
+/* Responsive */
+@media (max-width: 736px) {
+  .recover-wrapper {
+    width: 100vw;
+    height: auto;
+    justify-content: center;
+    align-items: center;
+    padding: 0px;
+  }
+
+  .recover-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 30px 20px;
+    border-radius: 25px;
+  }
+
+  .eye-icon {
+    right: 12px;
+    top: 70%;
+    transform: translateY(-50%);
+  }
+}
+
+@media (max-width: 480px) {
+  .recover-title {
+    font-size: 20px;
+  }
+
+  .recover-card {
+    padding: 25px 16px;
+  }
+
+  .eye-icon {
+    font-size: 1rem;
+  }
+}

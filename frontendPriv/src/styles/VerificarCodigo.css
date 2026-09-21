@@ -1,0 +1,77 @@
+/* src/styles/VerificarCodigo.css */
+.verify-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+ 
+}
+
+.verify-card {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  width: 100%;
+  text-align: left;
+}
+
+.verify-title {
+  font-family: 'Lora', sans-serif;
+  font-size: 24px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.verify-error {
+  color: red;
+  font-size: 12px;
+  margin-top: -2px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 736px) {
+  .verify-wrapper {
+    padding: 0px;
+    width: 100vw;
+    height: auto;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .verify-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 30px 20px;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 480px) {
+  .verify-title {
+    font-size: 20px;
+  }
+
+  .verify-card {
+    padding: 25px 16px;
+  }
+}
+
+@media (max-width: 912px), (max-width: 1024px), (max-width: 1247px) {
+  .verify-wrapper {
+    padding: 0px;
+    width: 100vw;
+    height: auto;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .verify-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 30px 20px;
+    box-sizing: border-box;
+  }
+}

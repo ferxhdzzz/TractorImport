@@ -1,0 +1,64 @@
+.products-private-page-containerr {
+  display: flex;
+  height: 100vh;
+  background-color: #FFF3F2;
+  overflow: hidden; /* ❌ impide que toda la pantalla scrollee */
+}
+.product-grid-private {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+.sidebar-privater {
+  height: 100vh;
+  flex-shrink: 0;
+}
+
+/* Contenedor general sin scroll */
+.main-content-wrapperr {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100vh;
+  overflow: hidden; /* 👈 importante */
+}
+
+/* Topbar queda arriba y fijo */
+.fixed-topbarr {
+  flex-shrink: 0;
+}
+
+/* Este contenedor ahora scrollea solo */
+.scrollable-contentr {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sección para las cards y el form */
+.padded-content-wrapperr {
+  padding-right: 375px;
+  box-sizing: border-box;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Área de productos */
+.products-area-privater {
+  flex-grow: 1;
+  overflow: visible;
+}
+
+/* Responsive: formulario abajo */
+@media (max-width: 1245px) {
+  .padded-content-wrapperr {
+    padding-right: 0;
+  }
+}

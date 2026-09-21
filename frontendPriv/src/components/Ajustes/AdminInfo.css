@@ -1,0 +1,9 @@
+.admin-info {
+  border: 1px solid #ccc;
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+.highlight {
+  color: #007bff;
+}

@@ -1,0 +1,165 @@
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  background-color: transparent;
+  padding: 15px 70px;
+  height: 64px;
+  position: relative;
+  font-family: 'Poppins', sans-serif;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background-color: rgba(214, 150, 191, 0.5);
+  padding: 8px 8px;
+  border-radius: 30px;
+  gap: 10px;
+}
+
+.search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  color: #000;
+  font-size: 14px;
+  width: 100%;
+}
+
+.search-icon {
+  color: #7d7a7a;
+  font-size: 14px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.icon-button {
+  background-color: #FAD1E4;
+  padding: 10px;
+  border-radius: 50%;
+  color: #D696BF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.icon-button:hover {
+  background-color: #d47a9a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 122, 154, 0.3);
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: black;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.profile-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 21px;
+  padding-right:12%;
+  color: rgba(214, 150, 191, 0.5);
+  cursor: pointer;
+  margin-left: auto;
+}
+
+/* Menú desplegable en móviles */
+.mobile-menu {
+  position: absolute;
+  top: 64px;
+  right: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 10px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 100;
+  width: 200px;
+}
+
+.mobile-profile {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.mobile-menu .icon-button {
+  align-self: flex-start;
+}
+
+.mobile-search {
+  display: flex;
+  align-items: center;
+  background-color: rgba(214, 150, 191, 0.5);
+  padding: 8px 5px;
+  border-radius: 30px;
+  gap: 10px;
+  width: 100%;
+  max-width: 240px;
+  margin: 0 auto; /* ✅ Esto la centra horizontalmente */
+}
+
+
+.mobile-search input::placeholder {
+  font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 15px 20px;
+  }
+
+  .topbar-right {
+    display: none;
+  }
+
+  .hamburger-btn {
+    display: block;
+  }
+
+  .profile span {
+    display: inline;
+  }
+
+  .profile-img {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-search {
+    display: flex;
+  }
+
+  .mobile-search input {
+    font-size: 12px;
+  }
+
+  .mobile-profile span {
+    display: inline;
+  }
+}

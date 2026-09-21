@@ -1,0 +1,11 @@
+.background-rectangle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; /* Ancho completo del contenedor padre */
+  height: 100%; /* Altura completa del contenedor padre */
+  background-color: #f5f5f5; /* Cambia el color para que sea visible */
+  z-index: -1; /* Envía el rectángulo detrás del contenido */
+  border-radius: 10px; /* Opcional: bordes redondeados */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra opcional */
+}

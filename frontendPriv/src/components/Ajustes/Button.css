@@ -1,0 +1,16 @@
+.button {
+  background-color: #CDDACC;
+  color: rgb(0, 0, 0);
+  border: none;
+  padding: 0.25rem 0.6rem; /* menos espacio interno */
+  border-radius: 50px; /* menos redondeado */
+  font-size: 0.75rem; /* letra más pequeña */
+  margin-left: 8%;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #CDDACC;
+  color: white;
+}

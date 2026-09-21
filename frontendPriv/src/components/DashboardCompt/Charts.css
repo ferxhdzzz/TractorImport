@@ -1,0 +1,17 @@
+/* Archivo: dashboard.css (o el que uses) */
+
+.bottom-section {
+  display: flex;
+  gap: 60px; /* espacio entre CategoryList y SalesChart */
+  align-items: flex-start; /* si quieres alinearlos arriba */
+}
+
+/* Que el gráfico ocupe todo el espacio horizontal restante */
+.sales-chart-container {
+  flex-grow: 1;
+  max-width: 100%;
+  background-color: white; /* si quieres fondo blanco */
+  padding: 20px;
+  border-radius: 10px;
+  box-sizing: border-box; /* para que padding no expanda ancho fuera del contenedor */
+}

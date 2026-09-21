@@ -1,0 +1,12 @@
+.back-arrow {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: #000;
+  margin-bottom: 16px;
+  transition: color 0.3s ease;
+}
+
+.back-arrow:hover {
+  color: #1C4024; /* Rosita al pasar el cursor */
+}

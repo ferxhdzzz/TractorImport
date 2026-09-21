@@ -1,0 +1,23 @@
+.botones-contenedor {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 0 20px; /* separa un poco de los bordes de la card */
+  margin-bottom: 50px;
+}
+
+.boton-perfil {
+  border: none;
+  border-radius: 25px;
+  padding: 10px 20px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  min-width: 120px;
+  text-align: center;
+}
+
+.boton-perfil:hover {
+  opacity: 0.9;
+}

@@ -1,0 +1,44 @@
+.ajustes {
+  font-family: "Poppins", sans-serif;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background-color: #1C4024; /* Verde oscuro elegante */
+  min-height: 100vh;
+  padding-top: 100%;
+  padding-bottom: 100%;
+}
+
+.background {
+  position: absolute;
+  top: 20%;
+  left: 10%;
+  width: 60%;
+  height: 40%;
+  background-color: #CDDACC; /* Verde claro suave sustituyendo al rosa */
+  border-radius: 15px;
+  z-index: -1;
+}
+
+.ajustes-page {
+  display: flex;
+  height: 100vh; /* Que ocupe toda la altura visible */
+  overflow: hidden; /* Para evitar doble scroll */
+}
+
+.ajustes-container {
+  margin-left: 0px; /* Deja espacio para la Sidebar */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.ajustes-content {
+  position: relative; /* Necesario para que el rectángulo se posicione dentro */
+  margin-top: 0px; /* Espacio para la TopBar fija */
+  padding: 1rem;
+  overflow-y: auto; /* Scroll solo aquí */
+  flex-grow: 1;
+}

@@ -1,0 +1,19 @@
+.hero-button {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  color: #FEF8F0;
+  background: #1C4024;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 999px;
+  box-shadow: 0 4px 15px rgba(206, 145, 165, 0.5);
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+  width: max-content; /* Ensure width is based on content */
+  align-self: flex-start; /* Prevent stretching if in a flex container */
+}
+
+.hero-button:hover {
+  background: white;
+  color: #1C4024;
+}

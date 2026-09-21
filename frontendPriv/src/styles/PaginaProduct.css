@@ -1,0 +1,253 @@
+/* PaginaProduct.css - Layout de Inventario de Maquinaria */
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #CDDACC; /* Verde claro suave de fondo */
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem 4rem;
+  overflow-y: auto;
+  margin-top: 60px;
+}
+
+.topbar-wrapper {
+  top: 0;
+  left: 292px;
+  right: 0;
+  height: 100px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.products-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.products-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* BARRA DE BÚSQUEDA ESTÉTICA */
+.product-search-wrapper {
+  width: 100%;
+  max-width: 440px;
+  margin-bottom: 1.5rem;
+}
+
+.product-search-input {
+  width: 100%;
+  height: 46px;
+  padding: 10px 18px;
+  border-radius: 6px; /* Bordes más cuadrados */
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #1e293b;
+  font-size: 0.92rem;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-sizing: border-box;
+}
+
+.product-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.product-search-input:hover {
+  background-color: #f8fafc;
+  border-color: #4C8F3F;
+}
+
+.product-search-input:focus {
+  background-color: #ffffff;
+  border-color: #1C4024; /* Verde oscuro al enfocar */
+  box-shadow: 0 0 0 3px rgba(28, 64, 36, 0.15);
+}
+
+.products-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+/* CARD DE MAQUINARIA */
+.product-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* Encabezado del Card */
+.product-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #CDDACC; /* División en verde claro suave */
+  padding-bottom: 0.8rem;
+}
+
+.product-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1C4024; /* Verde oscuro elegante */
+  margin: 0;
+}
+
+.product-date-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1C4024;
+  background-color: #f0f5f0;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px; /* Badge cuadrado */
+  border: 1px solid #CDDACC;
+}
+
+/* Grid Principal del Card (3 Secciones Organizadas) */
+.product-card-body {
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Sección Left: Slider / Galería */
+.product-image-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.no-image {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-style: italic;
+  padding: 2rem 0;
+}
+
+/* Sección Center: Detalles generales */
+.product-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.product-details-section p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Sección Right: Desglose Financiero y Costos */
+.product-financial-section {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.financial-row {
+  display: flex;
+  justify-content: space-between;
+  color: #475569;
+}
+
+.financial-row.total {
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 0.6rem;
+  margin-top: 0.4rem;
+  font-size: 1.1rem;
+  color: #1C4024; /* Verde destacado */
+  font-weight: bold;
+}
+
+/* Observaciones */
+.product-observaciones {
+  font-style: italic;
+  color: #334155;
+  background-color: #f0f5f0;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  border-left: 4px solid #4C8F3F; /* Borde verde medio */
+  font-size: 0.9rem;
+}
+
+/* Botones de Acción */
+.product-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1rem;
+}
+
+.product-actions button {
+  min-width: 120px;
+  border-radius: 6px !important; /* Cuadrado con bordes suaves */
+  font-weight: 600;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Estilo para botón de editar si aplica clase por defecto */
+.product-actions button:first-child {
+  background-color: #4C8F3F;
+  color: #ffffff;
+  border: none;
+}
+
+.product-actions button:first-child:hover {
+  background-color: #1C4024;
+}
+
+/* Mensaje Sin Productos */
+.no-products-message {
+  text-align: center;
+  font-size: 1.1rem;
+  padding: 3rem;
+  color: #64748b;
+  background-color: #ffffff;
+  border-radius: 12px;
+}
+
+/* Responsividad */
+@media (max-width: 992px) {
+  .product-card-body {
+    grid-template-columns: 1fr;
+  }
+
+  .product-image-section {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .product-actions {
+    justify-content: stretch;
+  }
+
+  .product-actions button {
+    flex: 1;
+  }
+}
