@@ -17,7 +17,7 @@ const usePerfilAdmin = () => {
   const obtenerAdmin = useCallback(async () => {
     setLoading(true); // Se marca como cargando en cada refetch
     try {
-      const res = await fetch("http://localhost:4000/api/admins/me", {
+      const res = await fetch("https://tractorimport.onrender.com/api/admins/me", {
         method: "GET",
         credentials: "include", // Importante para enviar cookies de sesión (authToken)
       });

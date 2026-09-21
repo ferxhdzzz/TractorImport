@@ -1,7 +1,7 @@
 // src/hooks/useLogoutAction.js
 import { toast } from "react-hot-toast";
 
-const api = "http://localhost:4000/api/logout";
+const api = "https://tractorimport.onrender.com/api/logout";
 
 const useLogoutAction = (navigate) => {
   const logoutUser = async () => {

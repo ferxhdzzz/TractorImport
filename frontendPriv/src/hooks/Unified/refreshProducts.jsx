@@ -8,7 +8,7 @@ const ProductsManager = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("http://localhost:4000/api/products", {
+      const res = await fetch("https://tractorimport.onrender.com/api/products", {
         credentials: "include", // ← incluye cookies de sesión
       });
       const data = await res.json();

@@ -10,7 +10,7 @@ export function useAddProduct() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:4000/api/products",
+        "https://tractorimport.onrender.com/api/products",
         productData,
         {
           withCredentials: true,

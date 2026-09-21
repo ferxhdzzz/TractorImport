@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 // URL base de la API (DEBE coincidir con el backend)
-const API_BASE_URL = "http://localhost:4000/api";
+const API_BASE_URL = "https://tractorimport.onrender.com/api";
 
 // 1. Crear el contexto
 const AdminAuthContext = createContext(null);

@@ -65,7 +65,7 @@ const AddLandModal = ({ onClose, refreshLands }) => {
     };
 
     try {
-      const res = await fetch("http://localhost:4000/api/lands", {
+      const res = await fetch("https://tractorimport.onrender.com/api/lands", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

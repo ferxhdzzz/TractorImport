@@ -1,7 +1,7 @@
 import { toast } from "react-hot-toast";
 import { useEffect, useState } from "react";
 
-const api = "http://localhost:4000/api/customers";
+const api = "https://tractorimport.onrender.com/api/customers";
 
 const useFetchCustomers = () => {
   const [customers, setCustomers] = useState([]);

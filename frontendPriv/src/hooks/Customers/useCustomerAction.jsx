@@ -1,6 +1,6 @@
 import { toast } from "react-hot-toast";
 
-const api = "http://localhost:4000/api/customers";
+const api = "https://tractorimport.onrender.com/api/customers";
 
 const useCustomerAction = (getCustomers) => {
   const deleteCustomer = async (id) => {

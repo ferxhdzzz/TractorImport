@@ -37,7 +37,7 @@ const SalesChart = () => {
       setLoading(true);
 
       // Obtener lista de clientes / ventas desde backend local
-      const response = await fetch("http://localhost:4000/api/customers", {
+      const response = await fetch("https://tractorimport.onrender.com/api/customers", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

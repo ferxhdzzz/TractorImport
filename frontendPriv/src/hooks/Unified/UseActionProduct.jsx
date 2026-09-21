@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 const useProductActions = (getProducts) => {
   const deleteProduct = async (id) => {
     try {
-      await axios.delete(`http://localhost:4000/api/products/${id}`, {
+      await axios.delete(`https://tractorimport.onrender.com/api/products/${id}`, {
         withCredentials: true, // ← incluir cookies de sesión
       });
       toast.success("Producto eliminado correctamente");

@@ -15,7 +15,7 @@ export default function useAdminAuth() {
     const verifyAdmin = async () => {
       try {
         // SOLICITUD AL BACKEND PARA VERIFICAR EL ROL DE ADMINISTRADOR
-        const res = await fetch("http://localhost:4000/api/login/checkAdmin", {
+        const res = await fetch("https://tractorimport.onrender.com/api/login/checkAdmin", {
           method: "GET",
           credentials: "include", // INCLUYE LAS COOKIES DE SESIÓN
         });

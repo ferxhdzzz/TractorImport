@@ -27,7 +27,7 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
   useEffect(() => {
     const fetchMachinery = async () => {
       try {
-        const res = await axios.get("http://localhost:4000/api/products", {
+        const res = await axios.get("https://tractorimport.onrender.com/api/products", {
           withCredentials: true,
         });
         const items = Array.isArray(res.data) ? res.data : res.data.products || [];
@@ -48,7 +48,7 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
       if (!customerId) return;
 
       try {
-        const res = await fetch(`http://localhost:4000/api/customers/${customerId}`, {
+        const res = await fetch(`https://tractorimport.onrender.com/api/customers/${customerId}`, {
           credentials: "include",
         });
 
@@ -144,7 +144,7 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
     };
 
     try {
-      const res = await fetch(`http://localhost:4000/api/customers/${customerId}`, {
+      const res = await fetch(`https://tractorimport.onrender.com/api/customers/${customerId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

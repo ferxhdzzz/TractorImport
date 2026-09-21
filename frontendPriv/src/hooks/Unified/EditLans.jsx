@@ -29,7 +29,7 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
       if (!landId) return;
 
       try {
-        const res = await fetch(`http://localhost:4000/api/lands/${landId}`, {
+        const res = await fetch(`https://tractorimport.onrender.com/api/lands/${landId}`, {
           credentials: "include",
         });
 
@@ -125,7 +125,7 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
     };
 
     try {
-      const res = await fetch(`http://localhost:4000/api/lands/${landId}`, {
+      const res = await fetch(`https://tractorimport.onrender.com/api/lands/${landId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

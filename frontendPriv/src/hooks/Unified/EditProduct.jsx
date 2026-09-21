@@ -27,7 +27,7 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     const loadProduct = async () => {
       try {
         const res = await fetch(
-          `http://localhost:4000/api/products/${productId}`,
+          `https://tractorimport.onrender.com/api/products/${productId}`,
           { credentials: "include" }
         );
 
@@ -193,7 +193,7 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
         });
 
       const res = await fetch(
-        `http://localhost:4000/api/products/${productId}`,
+        `https://tractorimport.onrender.com/api/products/${productId}`,
         {
           method: "PUT",
           credentials: "include",

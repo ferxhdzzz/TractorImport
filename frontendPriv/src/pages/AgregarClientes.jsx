@@ -39,7 +39,7 @@ export default function AddCustomerPage() {
   useEffect(() => {
     const fetchMachinery = async () => {
       try {
-        const response = await axios.get("http://localhost:4000/api/products", {
+        const response = await axios.get("https://tractorimport.onrender.com/api/products", {
           withCredentials: true,
         });
         const items = Array.isArray(response.data)
@@ -122,7 +122,7 @@ export default function AddCustomerPage() {
     };
 
     try {
-      await axios.post("http://localhost:4000/api/customers", payload, {
+      await axios.post("https://tractorimport.onrender.com/api/customers", payload, {
         headers: {
           "Content-Type": "application/json",
         },

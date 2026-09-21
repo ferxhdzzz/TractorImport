@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 
-const API_URL = "http://localhost:4000/api/products";
+const API_URL = "https://tractorimport.onrender.com/api/products";
 
 export const useDataProduct = () => {
   const [products, setProducts] = useState([]);

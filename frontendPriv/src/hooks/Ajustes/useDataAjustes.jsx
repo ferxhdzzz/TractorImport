@@ -58,7 +58,7 @@ const useDataAjustes = () => {
         };
 
       // ENVIAR LA SOLICITUD AL SERVIDOR
-      const response = await fetch("http://localhost:4000/api/admins/me", options);
+      const response = await fetch("https://tractorimport.onrender.com/api/admins/me", options);
       const result = await response.json();
       
       if (!response.ok) {

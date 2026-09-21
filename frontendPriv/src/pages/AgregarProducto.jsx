@@ -106,7 +106,7 @@ export default function AddInventoryPage() {
     });
 
     try {
-      await axios.post("http://localhost:4000/api/products", data, {
+      await axios.post("https://tractorimport.onrender.com/api/products", data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
