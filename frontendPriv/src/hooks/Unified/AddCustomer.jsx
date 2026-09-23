@@ -3,11 +3,11 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import "./AddLandModal.css";
 
-const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
+const AddCustomerModal = ({ onClose, refreshCustomers }) => {
   const [loading, setLoading] = useState(false);
   const [machineryList, setMachineryList] = useState([]);
 
-  // Referencias para abrir el calendario programáticamente
+  // Referencias para abrir el selector de fechas al hacer clic en el input o en el ícono
   const fechaCompraRef = useRef(null);
   const fechaAbonoRef = useRef(null);
 
@@ -15,7 +15,7 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
     nombreCliente: "",
     maquinariaComprada: "",
     precioFinal: "",
-    fechaCompra: "",
+    fechaCompra: new Date().toISOString().split("T")[0],
     aplicaAbono: false,
     abonoPagado: "",
     fechaAbono: "",
@@ -34,7 +34,12 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
     }
   };
 
-  // Formatear números para mostrar con comas
+  // Convertir string formateado como "13,000.50" a número puro (13000.5)
+  const convertToNumber = (value) => {
+    return Number(String(value).replace(/,/g, "")) || 0;
+  };
+
+  // Formatear números con comas para la vista (Ej: 13500 -> "13,500")
   const formatNumberWithCommas = (val) => {
     if (val === undefined || val === null || val === "") return "";
     const clean = String(val).replace(/,/g, "");
@@ -51,12 +56,7 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
       : integerPart;
   };
 
-  // Convertir un número formateado como "13,000.50" a valor numérico puro
-  const convertToNumber = (value) => {
-    return Number(String(value).replace(/,/g, "")) || 0;
-  };
-
-  // Evitar desfase de 1 día en zona horaria / UTC
+  // Evitar desfase de 1 día por zona horaria UTC
   const formatLocalDate = (dateString) => {
     if (!dateString) return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
@@ -66,7 +66,7 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
   };
 
   // ==============================
-  // 1. CARGAR LISTA DE MAQUINARIA
+  // CARGAR LISTA DE MAQUINARIAS
   // ==============================
   useEffect(() => {
     const fetchMachinery = async () => {
@@ -85,66 +85,7 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
   }, []);
 
   // ==============================
-  // 2. CARGAR CLIENTE A EDITAR
-  // ==============================
-  useEffect(() => {
-    const loadCustomer = async () => {
-      if (!customerId) return;
-
-      try {
-        const res = await fetch(`https://tractorimport.onrender.com/api/customers/${customerId}`, {
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || "No se pudo cargar la información del cliente");
-        }
-
-        const data = await res.json();
-
-        // Formatear fechas a YYYY-MM-DD para inputs date
-        const formattedFechaCompra = data.fechaCompra
-          ? new Date(data.fechaCompra).toISOString().split("T")[0]
-          : "";
-        const formattedFechaAbono = data.fechaAbono
-          ? new Date(data.fechaAbono).toISOString().split("T")[0]
-          : "";
-
-        // Extraer ID de maquinaria por si viene poblada como objeto
-        const idMaquinaria =
-          typeof data.maquinariaComprada === "object" && data.maquinariaComprada !== null
-            ? data.maquinariaComprada._id
-            : data.maquinariaComprada || "";
-
-        setFormData({
-          nombreCliente: data.nombreCliente || "",
-          maquinariaComprada: idMaquinaria,
-          precioFinal: formatNumberWithCommas(data.precioFinal),
-          fechaCompra: formattedFechaCompra,
-          aplicaAbono: Boolean(data.aplicaAbono),
-          abonoPagado: formatNumberWithCommas(data.abonoPagado),
-          fechaAbono: formattedFechaAbono,
-          remanente: formatNumberWithCommas(data.remanente),
-          metodoPago: data.metodoPago || "Transferencia",
-          observaciones: data.observaciones || "",
-        });
-      } catch (err) {
-        console.error("Error al cargar cliente:", err);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: err.message || "No se pudo obtener el cliente",
-          confirmButtonColor: "#be185d",
-        });
-      }
-    };
-
-    loadCustomer();
-  }, [customerId]);
-
-  // ==============================
-  // MANEJO DE CAMBIOS EN CAMPOS GENERALE
+  // MANEJO DE CAMBIOS GENERALES
   // ==============================
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -175,12 +116,23 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
         ? `${integerPart}.${decimalPart.slice(0, 2)}`
         : integerPart;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: formattedValue,
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: formattedValue };
+
+      // Recalcular el remanente automáticamente si cambia el precio final o el abono
+      const pf = convertToNumber(name === "precioFinal" ? formattedValue : prev.precioFinal);
+      const ab = convertToNumber(name === "abonoPagado" ? formattedValue : prev.abonoPagado);
+
+      if (prev.aplicaAbono && (name === "precioFinal" || name === "abonoPagado")) {
+        const calcRemanente = Math.max(0, pf - ab);
+        updated.remanente = formatNumberWithCommas(calcRemanente);
+      }
+
+      return updated;
+    });
   };
 
+  // Selección de Maquinaria y Autocompletado opcional del precio
   const handleMachineryChange = (e) => {
     const selectedId = e.target.value;
     const selectedItem = machineryList.find((item) => item._id === selectedId);
@@ -193,15 +145,27 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
       }
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      maquinariaComprada: selectedId,
-      precioFinal: formattedPrice || prev.precioFinal,
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        maquinariaComprada: selectedId,
+      };
+
+      if (formattedPrice) {
+        updated.precioFinal = formattedPrice;
+        if (prev.aplicaAbono) {
+          const ab = convertToNumber(prev.abonoPagado);
+          const pf = convertToNumber(formattedPrice);
+          updated.remanente = formatNumberWithCommas(Math.max(0, pf - ab));
+        }
+      }
+
+      return updated;
+    });
   };
 
   // ==============================
-  // ENVIAR ACTUALIZACIÓN (PUT)
+  // ENVIAR REGISTRO (POST)
   // ==============================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -221,8 +185,8 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
     };
 
     try {
-      const res = await fetch(`https://tractorimport.onrender.com/api/customers/${customerId}`, {
-        method: "PUT",
+      const res = await fetch("https://tractorimport.onrender.com/api/customers", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -232,7 +196,9 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
 
       const resJson = await res.json();
 
-      if (!res.ok) throw new Error(resJson.message || "Error al actualizar cliente");
+      if (!res.ok) {
+        throw new Error(resJson.message || resJson.error || "Error al registrar el cliente");
+      }
 
       if (typeof refreshCustomers === "function") {
         await refreshCustomers();
@@ -242,17 +208,18 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
 
       await Swal.fire({
         icon: "success",
-        title: "Cliente Actualizado",
-        text: "Los datos del cliente se modificaron correctamente.",
+        title: "Cliente Guardado",
+        text: "El registro del cliente se guardó correctamente.",
         confirmButtonColor: "#be185d",
       });
 
       onClose();
     } catch (err) {
       setLoading(false);
+      console.error("Error al registrar cliente:", err);
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: "Error al Guardar",
         text: err.message,
         confirmButtonColor: "#be185d",
       });
@@ -264,7 +231,7 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
       <div className="land-modal-card" onClick={(e) => e.stopPropagation()}>
         {/* Encabezado del Modal */}
         <div className="land-modal-header">
-          <h2 className="land-modal-title">Editar Registro de Cliente</h2>
+          <h2 className="land-modal-title">Registrar Nuevo Cliente / Venta</h2>
           <button type="button" className="land-modal-close-btn" onClick={onClose}>
             ×
           </button>
@@ -403,13 +370,13 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "0.4rem" }}>
                 <input
                   type="checkbox"
-                  id="aplicaAbono"
+                  id="aplicaAbonoModal"
                   name="aplicaAbono"
                   checked={formData.aplicaAbono}
                   onChange={handleChange}
                   style={{ width: "18px", height: "18px", accentColor: "#17390c", cursor: "pointer" }}
                 />
-                <label htmlFor="aplicaAbono" style={{ cursor: "pointer", fontWeight: "600", color: "#334155" }}>
+                <label htmlFor="aplicaAbonoModal" style={{ cursor: "pointer", fontWeight: "600", color: "#334155" }}>
                   ¿Aplica Abono Inicial?
                 </label>
               </div>
@@ -503,7 +470,7 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
             </button>
 
             <button type="submit" className="land-btn-submit" disabled={loading}>
-              {loading ? "Guardando..." : "Guardar Cambios"}
+              {loading ? "Guardando..." : "Guardar Cliente"}
             </button>
           </div>
         </form>
@@ -512,4 +479,4 @@ const EditCustomer = ({ customerId, onClose, refreshCustomers }) => {
   );
 };
 
-export default EditCustomer;
+export default AddCustomerModal;

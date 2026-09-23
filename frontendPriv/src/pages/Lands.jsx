@@ -20,6 +20,15 @@ const Lands = () => {
 
   const safeLands = Array.isArray(lands) ? lands : [];
 
+  // Función para formatear números a moneda con comas (Ej. 13500 -> "13,500.00")
+  const formatCurrency = (amount) => {
+    const num = Number(amount) || 0;
+    return num.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
   // Lógica de filtrado por Nombre de cliente, Dirección/Dimensión o Fecha de Venta
   const filteredLands = safeLands.filter((item) => {
     const term = searchTerm.toLowerCase().trim();
@@ -164,7 +173,7 @@ const Lands = () => {
                               <strong>Número de Cuotas:</strong> {item.numeroCuotas ?? "N/A"}
                             </p>
                             <p>
-                              <strong>Monto Cuota Mensual:</strong> ${item.montoCuotaMensual ?? 0}
+                              <strong>Monto Cuota Mensual:</strong> ${formatCurrency(item.montoCuotaMensual)}
                             </p>
                           </>
                         ) : (
@@ -173,23 +182,23 @@ const Lands = () => {
                           </p>
                         )}
                         <p>
-                          <strong>Monto Abonado:</strong> ${item.montoAbonado ?? 0}
+                          <strong>Monto Abonado:</strong> ${formatCurrency(item.montoAbonado)}
                         </p>
                       </div>
 
                       <div className="product-financial-section">
                         <div className="financial-row">
                           <span>Costo Terreno:</span>
-                          <strong>${item.costoTerreno ?? 0}</strong>
+                          <strong>${formatCurrency(item.costoTerreno)}</strong>
                         </div>
                         <div className="financial-row">
                           <span>Total Abonado:</span>
-                          <strong>${item.montoAbonado ?? 0}</strong>
+                          <strong>${formatCurrency(item.montoAbonado)}</strong>
                         </div>
                         <div className="financial-row total">
                           <span>Saldo Remanente:</span>
                           <span style={{ color: remanenteCalculado > 0 ? "#dc2626" : "#2563eb" }}>
-                            ${remanenteCalculado}
+                            ${formatCurrency(remanenteCalculado)}
                           </span>
                         </div>
                       </div>

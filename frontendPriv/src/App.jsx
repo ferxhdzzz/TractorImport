@@ -10,7 +10,7 @@ import VerificarCodigo from './pages/VerificarCodigo';
 import Dashboard from './pages/Dashboard';
 import Ajustes from './pages/Ajustes';
 import Customers from './pages/Customers';
-import AgregarCliente from './pages/AgregarClientes';
+import Gastos from './pages/Gastos';
 import Lands from './pages/Lands';
 import ProductPriv from './pages/Products-Private';
 import AddProduct from './pages/AgregarProducto';
@@ -75,14 +75,16 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/AgregarCliente"
+       
+       <Route
+          path="/Gastos"
           element={
             <ProtectedRoute>
-              <AgregarCliente />
+              <Gastos />
             </ProtectedRoute>
           }
         />
+       
         
         <Route
           path="/Lands"

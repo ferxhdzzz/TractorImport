@@ -65,7 +65,7 @@
 }
 
 .land-add-btn:hover {
-  background-color: #9d174d;
+  background-color: #0d330a;
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(190, 24, 93, 0.3);
 }

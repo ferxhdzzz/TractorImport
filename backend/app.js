@@ -16,6 +16,7 @@ import productsRoutes from "./src/routes/products.js";
 import adminRoutes from "./src/routes/Administrator.js";
 import profileRoutes from "./src/routes/profile.js";
 import landRoutes from "./src/routes/lands.js";
+import gastoRoutes from "./src/routes/GastoRoutes.js";
 import { validateAuthToken } from "./src/middlewares/validateAuthToken.js";
 
 
@@ -81,7 +82,7 @@ app.use("/api/logout", logoutRoutes);
 app.use("/api/recoveryPassword", recoveryPasswordRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/lands", landRoutes);
-
+app.use("/api/gastos",  gastoRoutes);
 
 // ===== Rutas protegidas (JWT) =====
 app.use("/api/customers",  customersRoutes);

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
-import "./AddLandModal.css"; // 👈 Utiliza el estilo amplio y unificado
+import "./AddLandModal.css";
 
 const EditProduct = ({ productId, onClose, refreshProducts }) => {
   const [loading, setLoading] = useState(false);
+  const fechaCompraRef = useRef(null);
 
   const [formData, setFormData] = useState({
     nombreMaquinaria: "",
@@ -20,6 +21,48 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
   // previewImages guarda objetos: { url: string, isNew: boolean, file?: File }
   const [previewImages, setPreviewImages] = useState([]);
 
+  // Abrir picker de fecha
+  const handleOpenPicker = () => {
+    if (fechaCompraRef.current) {
+      if (typeof fechaCompraRef.current.showPicker === "function") {
+        fechaCompraRef.current.showPicker();
+      } else {
+        fechaCompraRef.current.focus();
+      }
+    }
+  };
+
+  // Formatear números para mostrar con comas
+  const formatNumberWithCommas = (val) => {
+    if (val === undefined || val === null || val === "") return "";
+    const clean = String(val).replace(/,/g, "");
+    const parts = clean.split(".");
+    let integerPart = parts[0];
+    const decimalPart = parts[1];
+
+    if (integerPart) {
+      integerPart = Number(integerPart).toLocaleString("en-US");
+    }
+
+    return decimalPart !== undefined
+      ? `${integerPart}.${decimalPart.slice(0, 2)}`
+      : integerPart;
+  };
+
+  // Convertir string formateado ("13,000.50") a número puro (13000.50)
+  const convertToNumber = (value) => {
+    return Number(String(value).replace(/,/g, "")) || 0;
+  };
+
+  // Evitar desfase de 1 día en zona horaria / UTC
+  const formatLocalDate = (dateString) => {
+    if (!dateString) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return new Date(`${dateString}T12:00:00`).toISOString();
+    }
+    return new Date(dateString).toISOString();
+  };
+
   // ==============================
   // CARGAR REGISTRO DE MAQUINARIA A EDITAR
   // ==============================
@@ -34,7 +77,7 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
         if (!res.ok) throw new Error("No se pudo cargar la maquinaria");
         const data = await res.json();
 
-        // Formatear la fecha a YYYY-MM-DD para el input type="date"
+        // Extraer fecha limpia YYYY-MM-DD
         const formattedDate = data.fechaCompra
           ? new Date(data.fechaCompra).toISOString().split("T")[0]
           : "";
@@ -42,10 +85,10 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
         setFormData({
           nombreMaquinaria: data.nombreMaquinaria || data.name || "",
           numeroContenedor: data.numeroContenedor || "",
-          costoMaquinaria: data.costoMaquinaria || "",
-          impuestoPagado: data.impuestoPagado || "",
-          costoTransporte: data.costoTransporte || "",
-          precioFinal: data.precioFinal || data.price || "",
+          costoMaquinaria: formatNumberWithCommas(data.costoMaquinaria),
+          impuestoPagado: formatNumberWithCommas(data.impuestoPagado),
+          costoTransporte: formatNumberWithCommas(data.costoTransporte),
+          precioFinal: formatNumberWithCommas(data.precioFinal || data.price),
           fechaCompra: formattedDate,
           descripcion: data.descripcion || data.description || "",
           observaciones: data.observaciones || "",
@@ -71,11 +114,38 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
   }, [productId]);
 
   // ==============================
-  // MANEJO DE CAMPOS
+  // MANEJO DE CAMPOS DE TEXTO / FECHA
   // ==============================
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ==============================
+  // MANEJO DE CAMPOS NUMÉRICOS CON COMAS
+  // ==============================
+  const handleNumberInputChange = (e) => {
+    const { name, value } = e.target;
+
+    let cleanValue = value.replace(/[^\d.,]/g, "").replace(/,/g, "");
+    const parts = cleanValue.split(".");
+
+    let integerPart = parts[0];
+    const decimalPart = parts[1];
+
+    if (integerPart) {
+      integerPart = Number(integerPart).toLocaleString("en-US");
+    }
+
+    const formattedValue =
+      decimalPart !== undefined
+        ? `${integerPart}.${decimalPart.slice(0, 2)}`
+        : integerPart;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: formattedValue,
+    }));
   };
 
   // ==============================
@@ -173,10 +243,18 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     try {
       const form = new FormData();
 
-      // Agregar campos de maquinaria
-      Object.entries(formData).forEach(([key, value]) => {
-        form.append(key, value);
-      });
+      // Campos de texto y fechas
+      form.append("nombreMaquinaria", formData.nombreMaquinaria.trim());
+      form.append("numeroContenedor", formData.numeroContenedor.trim());
+      form.append("fechaCompra", formatLocalDate(formData.fechaCompra));
+      form.append("descripcion", formData.descripcion.trim());
+      form.append("observaciones", formData.observaciones.trim());
+
+      // Convertir campos de texto formateados a número puro
+      form.append("costoMaquinaria", convertToNumber(formData.costoMaquinaria));
+      form.append("impuestoPagado", convertToNumber(formData.impuestoPagado));
+      form.append("costoTransporte", convertToNumber(formData.costoTransporte));
+      form.append("precioFinal", convertToNumber(formData.precioFinal));
 
       // Imágenes existentes
       const existingImages = previewImages
@@ -270,11 +348,11 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
             <div className="land-field-group">
               <label>Costo de Maquinaria ($)</label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 name="costoMaquinaria"
                 value={formData.costoMaquinaria}
-                onChange={handleChange}
+                onChange={handleNumberInputChange}
                 placeholder="0.00"
                 className="land-input-field"
               />
@@ -284,11 +362,11 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
             <div className="land-field-group">
               <label>Impuesto Pagado ($)</label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 name="impuestoPagado"
                 value={formData.impuestoPagado}
-                onChange={handleChange}
+                onChange={handleNumberInputChange}
                 placeholder="0.00"
                 className="land-input-field"
               />
@@ -298,11 +376,11 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
             <div className="land-field-group">
               <label>Costo de Transporte ($)</label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 name="costoTransporte"
                 value={formData.costoTransporte}
-                onChange={handleChange}
+                onChange={handleNumberInputChange}
                 placeholder="0.00"
                 className="land-input-field"
               />
@@ -312,11 +390,11 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
             <div className="land-field-group">
               <label>Precio Final de Venta ($) *</label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 name="precioFinal"
                 value={formData.precioFinal}
-                onChange={handleChange}
+                onChange={handleNumberInputChange}
                 placeholder="0.00"
                 required
                 className="land-input-field"
@@ -326,13 +404,47 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
             {/* Fecha de Compra */}
             <div className="land-field-group">
               <label>Fecha de Compra</label>
-              <input
-                type="date"
-                name="fechaCompra"
-                value={formData.fechaCompra}
-                onChange={handleChange}
-                className="land-input-field"
-              />
+              <div style={{ position: "relative", width: "100%", cursor: "pointer" }}>
+                <input
+                  ref={fechaCompraRef}
+                  type="date"
+                  name="fechaCompra"
+                  value={formData.fechaCompra}
+                  onChange={handleChange}
+                  onClick={handleOpenPicker}
+                  className="land-input-field"
+                  style={{
+                    width: "100%",
+                    paddingRight: "40px",
+                    boxSizing: "border-box",
+                    cursor: "pointer",
+                  }}
+                />
+                <svg
+                  onClick={handleOpenPicker}
+                  className="calendar-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#1C4024"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    position: "absolute",
+                    right: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: "20px",
+                    height: "20px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
             </div>
 
             {/* Agregar más imágenes */}

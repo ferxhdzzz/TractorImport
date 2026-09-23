@@ -4,12 +4,12 @@ import Titulo from "../components/Componte-hook/Titulos";
 import SubTitulo from "../components/Componte-hook/SubTitulo";
 import Sidebar from "../components/Sidebar/Sidebar";
 import Topbar from "../components/TopBar/TopBar";
-import EditCustomer from "../hooks/Unified/EditCustomers"; // Ajusta esta ruta según la ubicación real de EditCustomer
+import EditCustomer from "../hooks/Unified/EditCustomers";
+import AddCustomer from "../hooks/Unified/AddCustomer"; // Ajusta esta ruta según la ubicación real de tu modal
 import useFetchCustomers from "../hooks/Customers/useFetchCustomers";
 import useCustomerAction from "../hooks/Customers/useCustomerAction";
 
 import "../styles/PaginaCustomers.css";
-
 
 const Customers = () => {
   const { customers, getCustomers, loading } = useFetchCustomers();
@@ -17,8 +17,18 @@ const Customers = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [editingCustomerId, setEditingCustomerId] = useState(null);
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
 
   const safeCustomers = Array.isArray(customers) ? customers : [];
+
+  // Función para formatear números a moneda con comas (Ej. 13500 -> "13,500.00")
+  const formatCurrency = (amount) => {
+    const num = Number(amount) || 0;
+    return num.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
   // Lógica de filtrado por búsqueda (Cliente, Maquinaria o Fecha)
   const filteredCustomers = safeCustomers.filter((item) => {
@@ -96,15 +106,28 @@ const Customers = () => {
             <SubTitulo>Administra las ventas realizadas, pagos de abonos y saldos remanentes</SubTitulo>
           </div>
 
-          {/* Barra de búsqueda estecificada con la nueva clase CSS */}
-          <div className="customer-search-wrapper">
-            <input
-              type="text"
-              className="customer-search-input"
-              placeholder="Buscar por cliente, maquinaria o fecha (DD/MM/AAAA)..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          {/* Barra Superior: Botón para Abrir Modal Agregar Cliente y Búsqueda */}
+          <div
+            className="land-top-actions"
+            style={{ display: "flex", gap: "15px", marginBottom: "20px", alignItems: "center" }}
+          >
+            <button
+              type="button"
+              className="land-add-btn"
+              onClick={() => setIsAddCustomerOpen(true)}
+            >
+              <span style={{ fontSize: "1.2rem", lineHeight: 0 }}>+</span> Agregar Cliente / Venta
+            </button>
+
+            <div className="customer-search-wrapper" style={{ flex: 1 }}>
+              <input
+                type="text"
+                className="customer-search-input"
+                placeholder="Buscar por cliente, maquinaria o fecha (DD/MM/AAAA)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Lista de Clientes / Registros de Venta */}
@@ -168,7 +191,7 @@ const Customers = () => {
                           <strong>Precio Final:</strong>
                         </p>
                         <p style={{ color: "#059669", fontWeight: "700", fontSize: "1.05rem" }}>
-                          ${item.precioFinal ?? 0}
+                          ${formatCurrency(item.precioFinal)}
                         </p>
                       </div>
 
@@ -188,7 +211,7 @@ const Customers = () => {
                           {item.aplicaAbono && (
                             <>
                               <p style={{ margin: 0 }}>
-                                <strong>Pagado:</strong> ${item.abonoPagado ?? 0}
+                                <strong>Pagado:</strong> ${formatCurrency(item.abonoPagado)}
                               </p>
                               <p style={{ margin: 0 }}>
                                 <strong>Fecha:</strong> {fechaAbonoFormateada}
@@ -202,7 +225,7 @@ const Customers = () => {
                             (item.remanente || 0) > 0 ? "pendiente" : "pagado"
                           }`}
                         >
-                          Saldo Remanente: ${item.remanente ?? 0}
+                          Saldo Remanente: ${formatCurrency(item.remanente)}
                         </div>
                       </div>
 
@@ -236,6 +259,14 @@ const Customers = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal para Agregar Cliente */}
+      {isAddCustomerOpen && (
+        <AddCustomer
+          onClose={() => setIsAddCustomerOpen(false)}
+          refreshCustomers={getCustomers}
+        />
+      )}
 
       {/* Modal de Edición */}
       {editingCustomerId && (

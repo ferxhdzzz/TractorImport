@@ -1,11 +1,10 @@
-
-// EditLand.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import "./AddLandModal.css";
 
 const EditLand = ({ landId, onClose, refreshLands }) => {
   const [loading, setLoading] = useState(false);
+  const fechaVentaRef = useRef(null);
 
   const [formData, setFormData] = useState({
     nombreCliente: "",
@@ -20,6 +19,47 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
     montoCuotaMensual: "",
     observaciones: "",
   });
+
+  const handleOpenPicker = () => {
+    if (fechaVentaRef.current) {
+      if (typeof fechaVentaRef.current.showPicker === "function") {
+        fechaVentaRef.current.showPicker();
+      } else {
+        fechaVentaRef.current.focus();
+      }
+    }
+  };
+
+  // Formatear números para mostrar con comas desde la carga inicial
+  const formatNumberWithCommas = (val) => {
+    if (val === undefined || val === null || val === "") return "";
+    const clean = String(val).replace(/,/g, "");
+    const parts = clean.split(".");
+    let integerPart = parts[0];
+    const decimalPart = parts[1];
+
+    if (integerPart) {
+      integerPart = Number(integerPart).toLocaleString("en-US");
+    }
+
+    return decimalPart !== undefined
+      ? `${integerPart}.${decimalPart.slice(0, 2)}`
+      : integerPart;
+  };
+
+  // Convertir string formateado ("13,000.50") a número puro (13000.5)
+  const convertToNumber = (value) => {
+    return Number(String(value).replace(/,/g, "")) || 0;
+  };
+
+  // Evitar desfase de 1 día en zona horaria / UTC
+  const formatLocalDate = (dateString) => {
+    if (!dateString) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return new Date(`${dateString}T12:00:00`).toISOString();
+    }
+    return new Date(dateString).toISOString();
+  };
 
   // ==============================
   // 1. CARGAR REGISTRO DE TERRENO POR ID
@@ -50,12 +90,12 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
           direccion: data.direccion || "",
           telefono: data.telefono || "",
           dimensionTerreno: data.dimensionTerreno || "",
-          costoTerreno: data.costoTerreno ?? "",
-          montoAbonado: data.montoAbonado ?? "",
+          costoTerreno: formatNumberWithCommas(data.costoTerreno),
+          montoAbonado: formatNumberWithCommas(data.montoAbonado),
           fechaVenta: formattedDate,
           tipoVenta: data.tipoVenta || "Contado",
           numeroCuotas: data.numeroCuotas ?? "",
-          montoCuotaMensual: data.montoCuotaMensual ?? "",
+          montoCuotaMensual: formatNumberWithCommas(data.montoCuotaMensual),
           observaciones: data.observaciones || "",
         });
       } catch (err) {
@@ -83,6 +123,31 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
     }));
   };
 
+  // Formatear campos numéricos con comas en tiempo real
+  const handleNumberInputChange = (e) => {
+    const { name, value } = e.target;
+
+    let cleanValue = value.replace(/[^\d.,]/g, "").replace(/,/g, "");
+    const parts = cleanValue.split(".");
+
+    let integerPart = parts[0];
+    const decimalPart = parts[1];
+
+    if (integerPart) {
+      integerPart = Number(integerPart).toLocaleString("en-US");
+    }
+
+    const formattedValue =
+      decimalPart !== undefined
+        ? `${integerPart}.${decimalPart.slice(0, 2)}`
+        : integerPart;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: formattedValue,
+    }));
+  };
+
   const handleTypeChange = (tipo) => {
     setFormData((prev) => ({
       ...prev,
@@ -92,8 +157,8 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
   };
 
   // Cálculo automático del saldo remanente
-  const costo = parseFloat(formData.costoTerreno) || 0;
-  const abonado = parseFloat(formData.montoAbonado) || 0;
+  const costo = convertToNumber(formData.costoTerreno);
+  const abonado = convertToNumber(formData.montoAbonado);
   const saldoRemanenteCalculado = Math.max(0, costo - abonado);
 
   // ==============================
@@ -105,22 +170,22 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
 
     const esPromesa = formData.tipoVenta === "Promesa";
 
-    const numCosto = parseFloat(formData.costoTerreno);
-    const numAbonado = parseFloat(formData.montoAbonado);
+    const numCosto = convertToNumber(formData.costoTerreno);
+    const numAbonado = convertToNumber(formData.montoAbonado);
     const numCuotas = parseInt(formData.numeroCuotas, 10);
-    const numMontoCuota = parseFloat(formData.montoCuotaMensual);
+    const numMontoCuota = convertToNumber(formData.montoCuotaMensual);
 
     const payload = {
       nombreCliente: formData.nombreCliente.trim(),
       direccion: formData.direccion.trim(),
       telefono: formData.telefono.trim(),
       dimensionTerreno: formData.dimensionTerreno.trim(),
-      costoTerreno: isNaN(numCosto) ? 0 : numCosto,
-      montoAbonado: isNaN(numAbonado) ? 0 : numAbonado,
-      fechaVenta: formData.fechaVenta,
+      costoTerreno: numCosto,
+      montoAbonado: numAbonado,
+      fechaVenta: formatLocalDate(formData.fechaVenta),
       tipoVenta: formData.tipoVenta,
       numeroCuotas: esPromesa && !isNaN(numCuotas) ? numCuotas : null,
-      montoCuotaMensual: esPromesa && !isNaN(numMontoCuota) ? numMontoCuota : null,
+      montoCuotaMensual: esPromesa ? numMontoCuota : null,
       observaciones: formData.observaciones ? formData.observaciones.trim() : "",
     };
 
@@ -255,25 +320,59 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
             {/* Fecha de Venta */}
             <div className="land-field-group">
               <label>Fecha de Venta / Promesa *</label>
-              <input
-                type="date"
-                name="fechaVenta"
-                value={formData.fechaVenta}
-                onChange={handleChange}
-                required
-                className="land-input-field"
-              />
+              <div style={{ position: "relative", width: "100%", cursor: "pointer" }}>
+                <input
+                  ref={fechaVentaRef}
+                  type="date"
+                  name="fechaVenta"
+                  value={formData.fechaVenta}
+                  onChange={handleChange}
+                  onClick={handleOpenPicker}
+                  required
+                  className="land-input-field"
+                  style={{
+                    width: "100%",
+                    paddingRight: "40px",
+                    boxSizing: "border-box",
+                    cursor: "pointer",
+                  }}
+                />
+                <svg
+                  onClick={handleOpenPicker}
+                  className="calendar-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#1C4024"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    position: "absolute",
+                    right: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: "20px",
+                    height: "20px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
             </div>
 
             {/* Costo del Terreno */}
             <div className="land-field-group">
               <label>Costo del Terreno ($) *</label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 name="costoTerreno"
                 value={formData.costoTerreno}
-                onChange={handleChange}
+                onChange={handleNumberInputChange}
                 placeholder="0.00"
                 required
                 className="land-input-field"
@@ -284,11 +383,11 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
             <div className="land-field-group">
               <label>Monto Abonado ($)</label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 name="montoAbonado"
                 value={formData.montoAbonado}
-                onChange={handleChange}
+                onChange={handleNumberInputChange}
                 placeholder="0.00"
                 className="land-input-field"
               />
@@ -299,7 +398,10 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
               <label>Saldo Remanente Calculado ($)</label>
               <input
                 type="text"
-                value={`$${saldoRemanenteCalculado.toFixed(2)}`}
+                value={`$${saldoRemanenteCalculado.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`}
                 readOnly
                 className="land-input-field"
                 style={{
@@ -328,11 +430,11 @@ const EditLand = ({ landId, onClose, refreshLands }) => {
                 <div className="land-field-group">
                   <label>Monto Cuota Mensual ($) *</label>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     name="montoCuotaMensual"
                     value={formData.montoCuotaMensual}
-                    onChange={handleChange}
+                    onChange={handleNumberInputChange}
                     placeholder="Ej: 150.00"
                     required
                     className="land-input-field"

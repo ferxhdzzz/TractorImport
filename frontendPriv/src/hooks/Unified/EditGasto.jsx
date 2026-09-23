@@ -1,31 +1,31 @@
 import React, { useState, useRef } from "react";
 import Swal from "sweetalert2";
-import "./AddLandModal.css";
+import "./AddLandModal.css"; // Utiliza los mismos estilos estéticos de tus modales
 
-const AddLandModal = ({ onClose, refreshLands }) => {
+const AddGastoModal = ({ onClose, refreshGastos }) => {
   const [loading, setLoading] = useState(false);
-  const fechaVentaRef = useRef(null);
+  const fechaGastoRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    nombreCliente: "",
-    direccion: "",
-    telefono: "",
-    dimensionTerreno: "",
-    costoTerreno: "",
-    montoAbonado: "",
-    fechaVenta: new Date().toISOString().split("T")[0],
-    tipoVenta: "Contado",
-    numeroCuotas: "",
-    montoCuotaMensual: "",
+    tipoPeriodo: "Dias",
+    cantidadPeriodo: "1",
+    costoPeriodo: "",
+    combustible: "",
+    pasajeTerrestre: "",
+    pasajeAereo: "",
+    pasajeMaritimo: "",
+    alquilerTransporte: "",
+    hospedaje: "",
     observaciones: "",
+    fechaGasto: new Date().toISOString().split("T")[0],
   });
 
   const handleOpenPicker = () => {
-    if (fechaVentaRef.current) {
-      if (typeof fechaVentaRef.current.showPicker === "function") {
-        fechaVentaRef.current.showPicker();
+    if (fechaGastoRef.current) {
+      if (typeof fechaGastoRef.current.showPicker === "function") {
+        fechaGastoRef.current.showPicker();
       } else {
-        fechaVentaRef.current.focus();
+        fechaGastoRef.current.focus();
       }
     }
   };
@@ -35,6 +35,14 @@ const AddLandModal = ({ onClose, refreshLands }) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  // Cambiar entre "Dias" u "Horas"
+  const handlePeriodoTypeChange = (tipo) => {
+    setFormData((prev) => ({
+      ...prev,
+      tipoPeriodo: tipo,
     }));
   };
 
@@ -82,45 +90,38 @@ const AddLandModal = ({ onClose, refreshLands }) => {
     return new Date(dateString).toISOString();
   };
 
-  const handleTypeChange = (tipo) => {
-    setFormData((prev) => ({
-      ...prev,
-      tipoVenta: tipo,
-      ...(tipo === "Contado" && { numeroCuotas: "", montoCuotaMensual: "" }),
-    }));
-  };
-
-  const costo = convertToNumber(formData.costoTerreno);
-  const abonado = convertToNumber(formData.montoAbonado);
-  const saldoRemanenteCalculado = Math.max(0, costo - abonado);
+  // Cálculo Dinámico en Tiempo Real del Total de Gastos
+  const totalCalculado =
+    convertToNumber(formData.costoPeriodo) +
+    convertToNumber(formData.combustible) +
+    convertToNumber(formData.pasajeTerrestre) +
+    convertToNumber(formData.pasajeAereo) +
+    convertToNumber(formData.pasajeMaritimo) +
+    convertToNumber(formData.alquilerTransporte) +
+    convertToNumber(formData.hospedaje);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const esPromesa = formData.tipoVenta === "Promesa";
-
-    const numCosto = convertToNumber(formData.costoTerreno);
-    const numAbonado = convertToNumber(formData.montoAbonado);
-    const numCuotas = parseInt(formData.numeroCuotas, 10);
-    const numMontoCuota = convertToNumber(formData.montoCuotaMensual);
-
     const payload = {
-      nombreCliente: formData.nombreCliente.trim(),
-      direccion: formData.direccion.trim(),
-      telefono: formData.telefono.trim(),
-      dimensionTerreno: formData.dimensionTerreno.trim(),
-      costoTerreno: numCosto,
-      montoAbonado: numAbonado,
-      fechaVenta: formatLocalDate(formData.fechaVenta),
-      tipoVenta: formData.tipoVenta,
-      numeroCuotas: esPromesa && !isNaN(numCuotas) ? numCuotas : null,
-      montoCuotaMensual: esPromesa ? numMontoCuota : null,
+      tipoPeriodo: formData.tipoPeriodo,
+      cantidadPeriodo: convertToNumber(formData.cantidadPeriodo) || 1,
+      costoPeriodo: convertToNumber(formData.costoPeriodo),
+      combustible: convertToNumber(formData.combustible),
+      pasajes: {
+        terrestre: convertToNumber(formData.pasajeTerrestre),
+        aereo: convertToNumber(formData.pasajeAereo),
+        maritimo: convertToNumber(formData.pasajeMaritimo),
+      },
+      alquilerTransporte: convertToNumber(formData.alquilerTransporte),
+      hospedaje: convertToNumber(formData.hospedaje),
       observaciones: formData.observaciones ? formData.observaciones.trim() : "",
+      fechaGasto: formatLocalDate(formData.fechaGasto),
     };
 
     try {
-      const res = await fetch("https://tractorimport.onrender.com/api/lands", {
+      const res = await fetch("https://tractorimport.onrender.com/api/gastos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,26 +133,26 @@ const AddLandModal = ({ onClose, refreshLands }) => {
       const resJson = await res.json();
 
       if (!res.ok) {
-        throw new Error(resJson.message || resJson.error || "Error al registrar el terreno");
+        throw new Error(resJson.message || resJson.error || "Error al registrar el gasto");
       }
 
-      if (typeof refreshLands === "function") {
-        await refreshLands();
+      if (typeof refreshGastos === "function") {
+        await refreshGastos();
       }
 
       setLoading(false);
 
       await Swal.fire({
         icon: "success",
-        title: "Terreno Guardado",
-        text: "El terreno se registró correctamente.",
+        title: "Gasto Guardado",
+        text: "El registro de gasto se guardó correctamente.",
         confirmButtonColor: "#be185d",
       });
 
       onClose();
     } catch (err) {
       setLoading(false);
-      console.error("Error al guardar terreno:", err);
+      console.error("Error al guardar gasto:", err);
       Swal.fire({
         icon: "error",
         title: "Error al Guardar",
@@ -165,92 +166,71 @@ const AddLandModal = ({ onClose, refreshLands }) => {
     <div className="land-modal-overlay" onClick={onClose}>
       <div className="land-modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="land-modal-header">
-          <h2 className="land-modal-title">Registrar Nuevo Terreno</h2>
+          <h2 className="land-modal-title">Registrar Nuevo Gasto</h2>
           <button type="button" className="land-modal-close-btn" onClick={onClose}>
             ×
           </button>
         </div>
 
+        {/* Toggle para seleccionar Tipo de Período (Días u Horas) */}
         <div className="type-sale-toggle">
           <button
             type="button"
-            className={`toggle-btn ${formData.tipoVenta === "Contado" ? "active" : ""}`}
-            onClick={() => handleTypeChange("Contado")}
+            className={`toggle-btn ${formData.tipoPeriodo === "Dias" ? "active" : ""}`}
+            onClick={() => handlePeriodoTypeChange("Dias")}
           >
-            Venta al Contado
+            Cálculo por Días
           </button>
           <button
             type="button"
-            className={`toggle-btn ${formData.tipoVenta === "Promesa" ? "active" : ""}`}
-            onClick={() => handleTypeChange("Promesa")}
+            className={`toggle-btn ${formData.tipoPeriodo === "Horas" ? "active" : ""}`}
+            onClick={() => handlePeriodoTypeChange("Horas")}
           >
-            Promesa de Venta
+            Cálculo por Horas
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="land-form-grid">
+            {/* Cantidad de Días u Horas */}
             <div className="land-field-group">
-              <label>Nombre del Cliente *</label>
+              <label>Cantidad de {formData.tipoPeriodo} *</label>
               <input
-                type="text"
-                name="nombreCliente"
-                value={formData.nombreCliente}
+                type="number"
+                min="0"
+                step="any"
+                name="cantidadPeriodo"
+                value={formData.cantidadPeriodo}
                 onChange={handleChange}
-                placeholder="Ej: Carlos Alberto Mendoza"
+                placeholder={`Ej: ${formData.tipoPeriodo === "Dias" ? "3 días" : "8 horas"}`}
                 required
                 className="land-input-field"
               />
             </div>
 
+            {/* Costo del Período */}
             <div className="land-field-group">
-              <label>Teléfono de Contacto *</label>
+              <label>Costo de {formData.tipoPeriodo} ($)</label>
               <input
                 type="text"
-                name="telefono"
-                value={formData.telefono}
-                onChange={handleChange}
-                placeholder="Ej: 7890-1234"
-                required
+                inputMode="decimal"
+                name="costoPeriodo"
+                value={formData.costoPeriodo}
+                onChange={handleNumberInputChange}
+                placeholder="0.00"
                 className="land-input-field"
               />
             </div>
 
-            <div className="land-field-group full-width">
-              <label>Dirección del Terreno *</label>
-              <input
-                type="text"
-                name="direccion"
-                value={formData.direccion}
-                onChange={handleChange}
-                placeholder="Ej: Lote 12, Polígono B, Cantón El Carmen"
-                required
-                className="land-input-field"
-              />
-            </div>
-
+            {/* Fecha del Gasto con Date Picker e Ícono */}
             <div className="land-field-group">
-              <label>Dimensión del Terreno *</label>
-              <input
-                type="text"
-                name="dimensionTerreno"
-                value={formData.dimensionTerreno}
-                onChange={handleChange}
-                placeholder="Ej: 200 m² / 10x20 varas"
-                required
-                className="land-input-field"
-              />
-            </div>
-
-            {/* Fecha de Venta con Date Picker e Icono SVG */}
-            <div className="land-field-group">
-              <label>Fecha de Venta / Promesa *</label>
+              <label>Fecha del Gasto *</label>
               <div style={{ position: "relative", width: "100%", cursor: "pointer" }}>
                 <input
-                  ref={fechaVentaRef}
+                  ref={fechaGastoRef}
                   type="date"
-                  name="fechaVenta"
-                  value={formData.fechaVenta}
+                  name="fechaGasto"
+                  value={formData.fechaGasto}
                   onChange={handleChange}
                   onClick={handleOpenPicker}
                   required
@@ -289,41 +269,96 @@ const AddLandModal = ({ onClose, refreshLands }) => {
               </div>
             </div>
 
-            {/* Costo Terreno con Formato Numérico */}
+            {/* Combustible */}
             <div className="land-field-group">
-              <label>Costo del Terreno ($) *</label>
+              <label>Combustible ($)</label>
               <input
                 type="text"
                 inputMode="decimal"
-                name="costoTerreno"
-                value={formData.costoTerreno}
-                onChange={handleNumberInputChange}
-                placeholder="0.00"
-                required
-                className="land-input-field"
-              />
-            </div>
-
-            {/* Monto Abonado con Formato Numérico */}
-            <div className="land-field-group">
-              <label>Monto Abonado ($)</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                name="montoAbonado"
-                value={formData.montoAbonado}
+                name="combustible"
+                value={formData.combustible}
                 onChange={handleNumberInputChange}
                 placeholder="0.00"
                 className="land-input-field"
               />
             </div>
 
-            {/* Saldo Remanente Calculado Dinámico */}
+            {/* Pasaje Terrestre */}
             <div className="land-field-group">
-              <label>Saldo Remanente Calculado ($)</label>
+              <label>Pasaje Terrestre ($)</label>
               <input
                 type="text"
-                value={`$${saldoRemanenteCalculado.toLocaleString("en-US", {
+                inputMode="decimal"
+                name="pasajeTerrestre"
+                value={formData.pasajeTerrestre}
+                onChange={handleNumberInputChange}
+                placeholder="0.00"
+                className="land-input-field"
+              />
+            </div>
+
+            {/* Pasaje Aéreo */}
+            <div className="land-field-group">
+              <label>Pasaje Aéreo ($)</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="pasajeAereo"
+                value={formData.pasajeAereo}
+                onChange={handleNumberInputChange}
+                placeholder="0.00"
+                className="land-input-field"
+              />
+            </div>
+
+            {/* Pasaje Marítimo */}
+            <div className="land-field-group">
+              <label>Pasaje Marítimo ($)</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="pasajeMaritimo"
+                value={formData.pasajeMaritimo}
+                onChange={handleNumberInputChange}
+                placeholder="0.00"
+                className="land-input-field"
+              />
+            </div>
+
+            {/* Alquiler de Transporte */}
+            <div className="land-field-group">
+              <label>Alquiler de Transporte ($)</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="alquilerTransporte"
+                value={formData.alquilerTransporte}
+                onChange={handleNumberInputChange}
+                placeholder="0.00"
+                className="land-input-field"
+              />
+            </div>
+
+            {/* Hospedaje */}
+            <div className="land-field-group">
+              <label>Hospedaje ($)</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="hospedaje"
+                value={formData.hospedaje}
+                onChange={handleNumberInputChange}
+                placeholder="0.00"
+                className="land-input-field"
+              />
+            </div>
+
+            {/* Total General Calculado */}
+            <div className="land-field-group">
+              <label>Total General del Gasto ($)</label>
+              <input
+                type="text"
+                value={`$${totalCalculado.toLocaleString("en-US", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}`}
@@ -331,54 +366,27 @@ const AddLandModal = ({ onClose, refreshLands }) => {
                 className="land-input-field"
                 style={{
                   fontWeight: "bold",
-                  color: saldoRemanenteCalculado > 0 ? "#dc2626" : "#2563eb",
+                  color: "#059669",
+                  fontSize: "1.05rem",
+                  backgroundColor: "#f8fafc",
                 }}
               />
             </div>
 
-            {formData.tipoVenta === "Promesa" && (
-              <>
-                <div className="land-field-group">
-                  <label>Número de Cuotas *</label>
-                  <input
-                    type="number"
-                    name="numeroCuotas"
-                    value={formData.numeroCuotas}
-                    onChange={handleChange}
-                    placeholder="Ej: 24, 36, 48"
-                    required
-                    className="land-input-field"
-                  />
-                </div>
-
-                <div className="land-field-group">
-                  <label>Monto Cuota Mensual ($) *</label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    name="montoCuotaMensual"
-                    value={formData.montoCuotaMensual}
-                    onChange={handleNumberInputChange}
-                    placeholder="Ej: 150.00"
-                    required
-                    className="land-input-field"
-                  />
-                </div>
-              </>
-            )}
-
+            {/* Observaciones */}
             <div className="land-field-group full-width">
-              <label>Observaciones</label>
+              <label>Observaciones / Detalles</label>
               <textarea
                 name="observaciones"
                 value={formData.observaciones}
                 onChange={handleChange}
-                placeholder="Detalles adicionales sobre la negociación..."
+                placeholder="Añade notas o justificaciones adicionales de los gastos..."
                 className="land-input-field"
               />
             </div>
           </div>
 
+          {/* Botones del Modal */}
           <div className="land-modal-actions">
             <button
               type="button"
@@ -393,7 +401,7 @@ const AddLandModal = ({ onClose, refreshLands }) => {
               className="land-btn-submit"
               disabled={loading}
             >
-              {loading ? "Guardando..." : "Guardar Terreno"}
+              {loading ? "Guardando..." : "Guardar Gasto"}
             </button>
           </div>
         </form>
@@ -402,4 +410,4 @@ const AddLandModal = ({ onClose, refreshLands }) => {
   );
 };
 
-export default AddLandModal;
+export default AddGastoModal;

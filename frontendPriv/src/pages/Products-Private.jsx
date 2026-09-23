@@ -17,9 +17,79 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingProductId, setEditingProductId] = useState(null);
 
+  // Estados para el Modal Lightbox con Zoom y Pan (Arrastre)
+  const [selectedImageModal, setSelectedImageModal] = useState(null);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
   const safeInventory = Array.isArray(inventory) ? inventory : [];
 
-  // Lógica de filtrado por búsqueda (Nombre de maquinaria o número de contenedor)
+  // Función para formatear números a moneda con comas (Ej. 13500 -> "13,500.00")
+  const formatCurrency = (amount) => {
+    const num = Number(amount) || 0;
+    return num.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  // Abrir imagen en modal y reiniciar controles de zoom
+  const handleOpenImageModal = (src) => {
+    setSelectedImageModal(src);
+    setZoomScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const handleCloseImageModal = () => {
+    setSelectedImageModal(null);
+    setZoomScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  // Controles de Zoom
+  const handleZoomIn = () => setZoomScale((prev) => Math.min(prev + 0.3, 4));
+  const handleZoomOut = () => setZoomScale((prev) => Math.max(prev - 0.3, 1));
+  const handleResetZoom = () => {
+    setZoomScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  // Zoom con la rueda del ratón
+  const handleWheelZoom = (e) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      setZoomScale((prev) => Math.min(prev + 0.2, 4));
+    } else {
+      setZoomScale((prev) => {
+        const newScale = Math.max(prev - 0.2, 1);
+        if (newScale === 1) setPosition({ x: 0, y: 0 });
+        return newScale;
+      });
+    }
+  };
+
+  // Lógica para arrastrar la imagen (Pan) cuando tiene zoom
+  const handleMouseDown = (e) => {
+    if (zoomScale > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging && zoomScale > 1) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  // Lógica de filtrado por búsqueda
   const filteredInventory = safeInventory.filter((item) => {
     const term = searchTerm.toLowerCase();
     const matchesName = item.nombreMaquinaria?.toLowerCase().includes(term);
@@ -75,7 +145,7 @@ const Products = () => {
             <SubTitulo>Administra la maquinaria y tractores importados</SubTitulo>
           </div>
 
-          {/* Barra de búsqueda con la clase estilizada */}
+          {/* Barra de búsqueda */}
           <div className="product-search-wrapper">
             <input
               type="text"
@@ -86,7 +156,7 @@ const Products = () => {
             />
           </div>
 
-          {/* Lista de Maquinaria en Inventario */}
+          {/* Lista de Maquinaria */}
           <div className="products-list">
             {filteredInventory.length === 0 ? (
               <div className="no-products-message">
@@ -94,7 +164,6 @@ const Products = () => {
               </div>
             ) : (
               filteredInventory.map((item) => {
-                // Formateo de fecha
                 const fechaFormateada = item.fechaCompra
                   ? new Date(item.fechaCompra).toLocaleDateString("es-SV", {
                       year: "numeric",
@@ -105,16 +174,23 @@ const Products = () => {
 
                 return (
                   <div key={item._id} className="product-card">
-                    {/* Encabezado con Nombre y Badge de Fecha */}
                     <div className="product-card-header">
                       <h3 className="product-title">{item.nombreMaquinaria || "Maquinaria sin nombre"}</h3>
                       <span className="product-date-badge">Compra: {fechaFormateada}</span>
                     </div>
 
-                    {/* Cuerpo distribuido en 3 columnas */}
                     <div className="product-card-body">
-                      {/* Columna 1: Galería / Imágenes */}
-                      <div className="product-image-section">
+                      {/* Galería / Imágenes con clic para expandir */}
+                      <div
+                        className="product-image-section"
+                        onClick={(e) => {
+                          if (e.target.tagName === "IMG" && e.target.src) {
+                            handleOpenImageModal(e.target.src);
+                          }
+                        }}
+                        style={{ cursor: "pointer" }}
+                        title="Haz clic para ver la imagen en grande"
+                      >
                         {Array.isArray(item.images) && item.images.length > 0 ? (
                           <ImageSlider images={item.images} name={item.nombreMaquinaria} />
                         ) : item.imagenUrl ? (
@@ -124,7 +200,7 @@ const Products = () => {
                         )}
                       </div>
 
-                      {/* Columna 2: Descripción y Serie */}
+                      {/* Detalles */}
                       <div className="product-details-section">
                         <p>
                           <strong>Serie / Contenedor:</strong> {item.numeroContenedor || "N/A"}
@@ -134,35 +210,33 @@ const Products = () => {
                         </p>
                       </div>
 
-                      {/* Columna 3: Desglose Financiero */}
+                      {/* Desglose Financiero */}
                       <div className="product-financial-section">
                         <div className="financial-row">
                           <span>Costo Maquinaria:</span>
-                          <strong>${item.costoMaquinaria ?? 0}</strong>
+                          <strong>${formatCurrency(item.costoMaquinaria)}</strong>
                         </div>
                         <div className="financial-row">
                           <span>Costo Transporte:</span>
-                          <strong>${item.costoTransporte ?? 0}</strong>
+                          <strong>${formatCurrency(item.costoTransporte)}</strong>
                         </div>
                         <div className="financial-row">
                           <span>Impuestos:</span>
-                          <strong>${item.impuestoPagado ?? 0}</strong>
+                          <strong>${formatCurrency(item.impuestoPagado)}</strong>
                         </div>
                         <div className="financial-row total">
                           <span>Precio Final:</span>
-                          <span>${item.precioFinal ?? 0}</span>
+                          <span>${formatCurrency(item.precioFinal)}</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Observaciones (si existen) */}
                     {item.observaciones && (
                       <div className="product-observaciones">
                         <strong>Observaciones:</strong> {item.observaciones}
                       </div>
                     )}
 
-                    {/* Botones de Acción */}
                     <div className="product-actions">
                       <Button
                         onClick={() => setEditingProductId(item._id)}
@@ -185,12 +259,149 @@ const Products = () => {
         </div>
       </div>
 
+      {/* Modal de Edición */}
       {editingProductId && (
         <EditProduct
           productId={editingProductId}
           onClose={() => setEditingProductId(null)}
           refreshProducts={fetchInventory}
         />
+      )}
+
+      {/* Lightbox Modal con Zoom Dinámico */}
+      {selectedImageModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.9)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 99999,
+            overflow: "hidden",
+            backdropFilter: "blur(5px)",
+          }}
+          onClick={handleCloseImageModal}
+        >
+          {/* Panel Flotante de Botones de Control */}
+          <div
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "20px",
+              display: "flex",
+              gap: "10px",
+              zIndex: 100001,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              style={{
+                backgroundColor: "#1C4024",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                padding: "8px 14px",
+                fontSize: "1rem",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+              title="Acercar (+)"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              style={{
+                backgroundColor: "#1C4024",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                padding: "8px 14px",
+                fontSize: "1rem",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+              title="Alejar (-)"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              onClick={handleResetZoom}
+              style={{
+                backgroundColor: "#334155",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                padding: "8px 12px",
+                fontSize: "0.85rem",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+              title="Restablecer vista"
+            >
+              {Math.round(zoomScale * 100)}%
+            </button>
+            <button
+              type="button"
+              onClick={handleCloseImageModal}
+              style={{
+                backgroundColor: "#164a09",
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                padding: "8px 14px",
+                fontSize: "1.1rem",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+              title="Cerrar (Esc)"
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Contenedor Interactivo con Zoom y Arrastre */}
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              cursor: zoomScale > 1 ? (isDragging ? "grabbing" : "grab") : "default",
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onWheel={handleWheelZoom}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
+            <img
+              src={selectedImageModal}
+              alt="Maquinaria ampliada"
+              style={{
+                maxWidth: "85vw",
+                maxHeight: "85vh",
+                objectFit: "contain",
+                borderRadius: "8px",
+                transition: isDragging ? "none" : "transform 0.15s ease-out",
+                transform: `translate(${position.x}px, ${position.y}px) scale(${zoomScale})`,
+                userSelect: "none",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.6)",
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

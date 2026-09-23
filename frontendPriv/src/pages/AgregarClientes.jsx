@@ -62,15 +62,70 @@ export default function AddCustomerPage() {
     }));
   };
 
+  // Formatear campos numéricos con comas en tiempo real
+  const handleNumberInputChange = (e) => {
+    const { name, value } = e.target;
+
+    // Permitir únicamente números, comas y punto decimal
+    let cleanValue = value.replace(/[^\d.,]/g, "");
+
+    // Eliminar comas anteriores para volver a formatear
+    cleanValue = cleanValue.replace(/,/g, "");
+
+    // Separar parte entera y decimal
+    const parts = cleanValue.split(".");
+
+    let integerPart = parts[0];
+    const decimalPart = parts[1];
+
+    // Formatear la parte entera con comas
+    if (integerPart) {
+      integerPart = Number(integerPart).toLocaleString("en-US");
+    }
+
+    // Reconstruir el valor conservando los decimales
+    const formattedValue =
+      decimalPart !== undefined
+        ? `${integerPart}.${decimalPart.slice(0, 2)}`
+        : integerPart;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: formattedValue,
+    }));
+  };
+
+  // Convertir un número formateado como "13,000.50" a valor numérico puro 13000.5
+  const convertToNumber = (value) => {
+    return Number(String(value).replace(/,/g, "")) || 0;
+  };
+
   const handleMachineryChange = (e) => {
     const selectedId = e.target.value;
     const selectedItem = machineryList.find((item) => item._id === selectedId);
 
+    let formattedPrice = "";
+    if (selectedItem) {
+      const priceVal = selectedItem.precioFinal || selectedItem.price || "";
+      if (priceVal) {
+        formattedPrice = Number(priceVal).toLocaleString("en-US");
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       maquinariaComprada: selectedId,
-      precioFinal: selectedItem ? selectedItem.precioFinal || selectedItem.price || "" : prev.precioFinal,
+      precioFinal: formattedPrice || prev.precioFinal,
     }));
+  };
+
+  // Función para asegurar que la fecha enviada no pierda 1 día por conversión a UTC
+  const formatLocalDate = (dateString) => {
+    if (!dateString) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return new Date(`${dateString}T12:00:00`).toISOString();
+    }
+    return new Date(dateString).toISOString();
   };
 
   const handleSubmit = async (e) => {
@@ -111,12 +166,12 @@ export default function AddCustomerPage() {
     const payload = {
       nombreCliente: formData.nombreCliente.trim(),
       maquinariaComprada: formData.maquinariaComprada,
-      precioFinal: Number(formData.precioFinal) || 0,
-      fechaCompra: formData.fechaCompra,
+      precioFinal: convertToNumber(formData.precioFinal),
+      fechaCompra: formatLocalDate(formData.fechaCompra),
       aplicaAbono: formData.aplicaAbono,
-      abonoPagado: formData.aplicaAbono ? formData.abonoPagado : null,
-      fechaAbono: formData.aplicaAbono ? formData.fechaAbono : null,
-      remanente: Number(formData.remanente) || 0,
+      abonoPagado: formData.aplicaAbono ? convertToNumber(formData.abonoPagado) : null,
+      fechaAbono: formData.aplicaAbono ? formatLocalDate(formData.fechaAbono) : null,
+      remanente: convertToNumber(formData.remanente),
       metodoPago: formData.metodoPago,
       observaciones: formData.observaciones.trim(),
     };
@@ -144,9 +199,9 @@ export default function AddCustomerPage() {
         precioFinal: "",
         fechaCompra: "",
         aplicaAbono: false,
-        abonoPagado: "0",
+        abonoPagado: "",
         fechaAbono: "",
-        remanente: "0",
+        remanente: "",
         metodoPago: "Transferencia",
         observaciones: "",
       });
@@ -215,7 +270,7 @@ export default function AddCustomerPage() {
                 </select>
               </div>
 
-              {/* Fecha de Compra Funcional */}
+              {/* Fecha de Compra */}
               <div className="form-group">
                 <label>Fecha de Compra</label>
                 <div className="date-input-wrapper" style={{ position: "relative", width: "100%", cursor: "pointer" }}>
@@ -265,15 +320,16 @@ export default function AddCustomerPage() {
             </div>
 
             <div className="form-row">
+              {/* Precio Final con formato de comas */}
               <div className="form-group">
                 <label>Precio Final ($)</label>
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   name="precioFinal"
                   placeholder="0.00"
                   value={formData.precioFinal}
-                  onChange={handleInputChange}
+                  onChange={handleNumberInputChange}
                   required
                 />
               </div>
@@ -300,15 +356,16 @@ export default function AddCustomerPage() {
                 </select>
               </div>
 
+              {/* Saldo Remanente con formato de comas */}
               <div className="form-group">
                 <label>Saldo Remanente ($)</label>
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   name="remanente"
                   placeholder="0.00"
                   value={formData.remanente}
-                  onChange={handleInputChange}
+                  onChange={handleNumberInputChange}
                 />
               </div>
             </div>
@@ -330,7 +387,7 @@ export default function AddCustomerPage() {
 
               {formData.aplicaAbono && (
                 <>
-                  {/* Fecha de Abono Funcional */}
+                  {/* Fecha de Abono */}
                   <div className="form-group">
                     <label>Fecha de Abono</label>
                     <div className="date-input-wrapper" style={{ position: "relative", width: "100%", cursor: "pointer" }}>
@@ -378,14 +435,16 @@ export default function AddCustomerPage() {
                     </div>
                   </div>
 
+                  {/* Cantidad de abono con formato de comas */}
                   <div className="form-group">
                     <label>Cantidad de abono ($)</label>
                     <input
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       name="abonoPagado"
+                      placeholder="0.00"
                       value={formData.abonoPagado}
-                      onChange={handleInputChange}
+                      onChange={handleNumberInputChange}
                       required={formData.aplicaAbono}
                     />
                   </div>

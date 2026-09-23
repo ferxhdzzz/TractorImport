@@ -56,15 +56,18 @@ function Sidebar() {
             <FaBox className="icon" /> <span>Maquinarias</span>
           </NavLink>
           
-          <NavLink to="/AgregarCliente" className="nav-link">
-            <FaTruck className="icon" /> <span>Agregar Cliente</span>
-          </NavLink>
           <NavLink to="/customers" className="nav-link">
             <FaUsers className="icon" /> <span>Clientes</span>
           </NavLink>
+
+    <NavLink to="/Gastos" className="nav-link">
+            <FaTruck className="icon" /> <span>Gastos Operativos</span>
+          </NavLink>
+
           <NavLink to="/Lands" className="nav-link">
             <FaTags className="icon" /> <span>Terrenos</span>
           </NavLink>
+
           <NavLink to="/ajustes" className="nav-link">
             <FaCog className="icon" /> <span>Ajustes</span>
           </NavLink>
