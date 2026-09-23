@@ -90,9 +90,6 @@ inventoryController.createInventory = async (req, res) => {
   } = req.body;
 
   try {
-    // -------------------------------------------------
-    // VALIDACIÓN DE CAMPOS OBLIGATORIOS
-    // -------------------------------------------------
     if (
       !nombreMaquinaria ||
       !nombreMaquinaria.trim() ||
@@ -105,9 +102,6 @@ inventoryController.createInventory = async (req, res) => {
       });
     }
 
-    // -------------------------------------------------
-    // VALIDACIÓN DEL COSTO
-    // -------------------------------------------------
     const costoNum = Number(costoMaquinaria);
     if (isNaN(costoNum) || costoNum < 0) {
       return res.status(400).json({
@@ -116,9 +110,6 @@ inventoryController.createInventory = async (req, res) => {
       });
     }
 
-    // -------------------------------------------------
-    // SUBIDA DE IMÁGENES
-    // -------------------------------------------------
     let uploadedImages = [];
 
     if (req.files && req.files.length > 0) {
@@ -133,9 +124,6 @@ inventoryController.createInventory = async (req, res) => {
       uploadedImages.push(req.body.imagenUrl);
     }
 
-    // -------------------------------------------------
-    // PRECIO FINAL (RESPETA VALOR MANUAL O CALCULA)
-    // -------------------------------------------------
     const impuestoNum = Number(impuestoPagado) || 0;
     const transporteNum = Number(costoTransporte) || 0;
 
@@ -144,9 +132,6 @@ inventoryController.createInventory = async (req, res) => {
         ? Number(precioFinal)
         : costoNum + impuestoNum + transporteNum;
 
-    // -------------------------------------------------
-    // CREAR Y GUARDAR REGISTRO
-    // -------------------------------------------------
     const newInventory = new Inventory({
       nombreMaquinaria: nombreMaquinaria.trim(),
       descripcion: descripcion ? descripcion.trim() : "",
@@ -175,16 +160,13 @@ inventoryController.createInventory = async (req, res) => {
 };
 
 // =====================================================
-// ACTUALIZAR INVENTARIO
+// ACTUALIZAR INVENTARIO (CONSERVANDO IMÁGENES EXISTENTES)
 // =====================================================
 inventoryController.updateInventory = async (req, res) => {
   const { id } = req.params;
   const updates = { ...req.body };
 
   try {
-    // -------------------------------------------------
-    // BUSCAR ELEMENTO EXISTENTE
-    // -------------------------------------------------
     const item = await Inventory.findById(id);
 
     if (!item) {
@@ -193,9 +175,7 @@ inventoryController.updateInventory = async (req, res) => {
       });
     }
 
-    // -------------------------------------------------
-    // PROCESAR Y CONVERTIR NÚMEROS
-    // -------------------------------------------------
+    // CAMPOS NUMÉRICOS
     if (updates.costoMaquinaria !== undefined) {
       item.costoMaquinaria = Number(updates.costoMaquinaria) || 0;
     }
@@ -205,15 +185,11 @@ inventoryController.updateInventory = async (req, res) => {
     if (updates.costoTransporte !== undefined) {
       item.costoTransporte = Number(updates.costoTransporte) || 0;
     }
-
-    // ✅ PRECIO FINAL: Si se envía un valor manual (incluso 0), usar ese directamente
     if (updates.precioFinal !== undefined) {
       item.precioFinal = Number(updates.precioFinal) || 0;
     }
 
-    // -------------------------------------------------
     // CAMPOS DE TEXTO Y FECHA
-    // -------------------------------------------------
     if (updates.nombreMaquinaria !== undefined) {
       item.nombreMaquinaria = updates.nombreMaquinaria.trim();
     }
@@ -230,13 +206,11 @@ inventoryController.updateInventory = async (req, res) => {
       item.observaciones = updates.observaciones.trim();
     }
 
-    // -------------------------------------------------
-    // PROCESAMIENTO DE IMÁGENES (EXISTENTES Y NUEVAS)
-    // -------------------------------------------------
+    // PROCESAMIENTO CONSERVATIVO DE IMÁGENES
     let finalImages = [];
 
-    // Mantener imágenes existentes elegidas
-    if (updates.existingImages) {
+    // 1. Verificar si el frontend envió una lista explícita de imágenes existentes
+    if (updates.existingImages !== undefined) {
       try {
         finalImages = typeof updates.existingImages === "string"
           ? JSON.parse(updates.existingImages)
@@ -247,10 +221,11 @@ inventoryController.updateInventory = async (req, res) => {
           : [];
       }
     } else {
-      finalImages = item.images || [];
+      // Si el frontend no envió existingImages, conservar las que ya están en la base de datos
+      finalImages = item.images && item.images.length > 0 ? [...item.images] : (item.imagenUrl ? [item.imagenUrl] : []);
     }
 
-    // Subir nuevas imágenes si fueron seleccionadas
+    // 2. Si se subieron archivos nuevos, subirlos y sumarlos a la lista
     if (req.files && req.files.length > 0) {
       const newUploads = await Promise.all(
         req.files.map((file) => uploadImageToCloudinary(file))
@@ -261,12 +236,16 @@ inventoryController.updateInventory = async (req, res) => {
       if (singleUrl) finalImages.push(singleUrl);
     }
 
-    item.images = finalImages;
-    item.imagenUrl = finalImages[0] || "";
+    // 3. Asignar imágenes al objeto antes de guardar
+    if (finalImages.length > 0) {
+      item.images = finalImages;
+      item.imagenUrl = finalImages[0];
+    } else {
+      // Mantenimiento de respaldo por si finalImages quedaba vacío por error de parseo
+      item.images = item.images || [];
+      item.imagenUrl = item.imagenUrl || "";
+    }
 
-    // -------------------------------------------------
-    // GUARDAR CAMBIOS
-    // -------------------------------------------------
     const updatedInventory = await item.save();
 
     res.status(200).json(updatedInventory);
