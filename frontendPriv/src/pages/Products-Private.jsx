@@ -203,7 +203,7 @@ const Products = () => {
                       {/* Detalles */}
                       <div className="product-details-section">
                         <p>
-                          <strong>Serie / Contenedor:</strong> {item.numeroContenedor || "N/A"}
+                          <strong>Serie:</strong> {item.numeroContenedor || "N/A"}
                         </p>
                         <p>
                           <strong>Descripción:</strong> {item.descripcion || "Sin descripción disponible."}

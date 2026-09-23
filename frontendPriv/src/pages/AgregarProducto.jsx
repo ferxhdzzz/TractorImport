@@ -285,7 +285,7 @@ export default function AddInventoryPage() {
               </div>
 
               <div className="form-group">
-                <label>Número de Serie / Contenedor</label>
+                <label>Número de Serie</label>
 
                 <input
                   type="text"
