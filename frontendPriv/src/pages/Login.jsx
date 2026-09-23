@@ -53,59 +53,65 @@ const PinkImprovedInput = React.forwardRef(({
 export default function Login() {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false); // Estado para controlar el texto del botón
   const navigate = useNavigate();
   const { updateAuthStatus } = useAdminAuth();
 
   const onSubmit = async (data) => {
-  try {
-    const response = await fetch("https://tractorimport.onrender.com/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        email: data.email,
-        password: data.password,
-      }),
-    });
+    setLoading(true); // Iniciamos el estado de carga
+    try {
+      const response = await fetch("https://tractorimport.onrender.com/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    // 🔴 SI EL LOGIN FALLA (401, 403, 500) DETENEMOS AQUÍ Y NO VERIFICAMOS AUTH
-    if (!response.ok) {
+      // 🔴 SI EL LOGIN FALLA (401, 403, 500) DETENEMOS AQUÍ Y NO VERIFICAMOS AUTH
+      if (!response.ok) {
+        setLoading(false); // Desactivamos el loading si falla
+        Swal.fire({
+          icon: "error",
+          title: response.status === 403 ? "Cuenta Bloqueada" : "Error de Login",
+          text: result.message || "Credenciales incorrectas",
+        });
+        return; // Stop aquí
+      }
+
+      // Si guardas token en localStorage como respaldo:
+      if (result.token) {
+        localStorage.setItem("token", result.token);
+      }
+
+      // 🟢 SOLO SI EL LOGIN FUE EXITOSO VERIFICAMOS EL ESTADO
+      const isAuthUpdated = await updateAuthStatus();
+
+      if (isAuthUpdated) {
+        Swal.fire({
+          icon: "success",
+          title: "¡Bienvenido/a!",
+          text: "Sesión iniciada correctamente.",
+        }).then(() => {
+          navigate("/dashboard");
+        });
+      } else {
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Error en petición de login:", error);
+      setLoading(false); // Desactivamos el loading si ocurre un error
       Swal.fire({
         icon: "error",
-        title: response.status === 403 ? "Cuenta Bloqueada" : "Error de Login",
-        text: result.message || "Credenciales incorrectas",
-      });
-      return; // Stop aquí
-    }
-
-    // Si guardas token en localStorage como respaldo:
-    if (result.token) {
-      localStorage.setItem("token", result.token);
-    }
-
-    // 🟢 SOLO SI EL LOGIN FUE EXITOSO VERIFICAMOS EL ESTADO
-    const isAuthUpdated = await updateAuthStatus();
-
-    if (isAuthUpdated) {
-      Swal.fire({
-        icon: "success",
-        title: "¡Bienvenido/a!",
-        text: "Sesión iniciada correctamente.",
-      }).then(() => {
-        navigate("/dashboard");
+        title: "Error",
+        text: "Error de conexión con el servidor.",
       });
     }
-  } catch (error) {
-    console.error("Error en petición de login:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "Error de conexión con el servidor.",
-    });
-  }
-};
+  };
 
   return (
     <div
@@ -126,6 +132,7 @@ export default function Login() {
           <PinkImprovedInput
             label="Correo electrónico"
             type="email"
+            disabled={loading}
             error={errors.email?.message}
             {...register("email", { 
               required: "El correo es obligatorio.",
@@ -139,6 +146,7 @@ export default function Login() {
           <PinkImprovedInput
             label="Contraseña"
             type={showPassword ? "text" : "password"}
+            disabled={loading}
             error={errors.password?.message}
             showPasswordToggle={true}
             showPassword={showPassword}
@@ -154,7 +162,11 @@ export default function Login() {
         </div>
 
         <OlvidarCont text="¿Olvidaste tu contraseña?" to="/recuperacion" />
-        <Button type="submit" text="Ingresar →" />
+        <Button 
+          type="submit" 
+          text={loading ? "Ingresando..." : "Ingresar →"} 
+          disabled={loading}
+        />
       </form>
 
       <style>{`
