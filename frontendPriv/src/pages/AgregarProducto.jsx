@@ -124,7 +124,7 @@ export default function AddInventoryPage() {
       Swal.fire({
         icon: "warning",
         title: "Falta Contenedor",
-        text: "Ingresa el número de contenedor / serie",
+        text: "Ingresa el número de serie",
         confirmButtonColor: "#1C4024",
       });
 
@@ -272,7 +272,7 @@ export default function AddInventoryPage() {
               </div>
 
               <div className="form-group">
-                <label>Número de Serie / Contenedor</label>
+                <label>Número de Serie</label>
 
                 <input
                   type="text"

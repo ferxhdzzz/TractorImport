@@ -333,7 +333,7 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
 
             {/* Número de Contenedor */}
             <div className="land-field-group">
-              <label>Número de Contenedor</label>
+              <label>Número de Serie</label>
               <input
                 type="text"
                 name="numeroContenedor"
