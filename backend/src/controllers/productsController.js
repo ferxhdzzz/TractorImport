@@ -2,37 +2,90 @@ import Inventory from "../models/Products.js";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs/promises";
 
-// Configuración de Cloudinary (Usa variables de entorno en producción)
+// Configuración de Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dosy4rouu',
-  api_key: process.env.CLOUDINARY_API_KEY || '712175425427873',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'Yk2vqXqQ6aknOrT7FCoqEiWw31w',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dosy4rouu",
+  api_key: process.env.CLOUDINARY_API_KEY || "712175425427873",
+  api_secret:
+    process.env.CLOUDINARY_API_SECRET || "Yk2vqXqQ6aknOrT7FCoqEiWw31d",
 });
 
 const inventoryController = {};
 
-// Obtener todo el inventario
+// =====================================================
+// OBTENER TODO EL INVENTARIO
+// =====================================================
 inventoryController.getInventory = async (req, res) => {
   try {
     const items = await Inventory.find();
     res.json(items);
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener el inventario", error: error.message });
+    res.status(500).json({
+      message: "Error al obtener el inventario",
+      error: error.message,
+    });
   }
 };
 
-// Obtener un elemento de inventario por ID
+// =====================================================
+// OBTENER INVENTARIO POR ID
+// =====================================================
 inventoryController.getInventoryById = async (req, res) => {
   try {
     const item = await Inventory.findById(req.params.id);
-    if (!item) return res.status(404).json({ message: "Elemento no encontrado en el inventario" });
+
+    if (!item) {
+      return res.status(404).json({
+        message: "Elemento no encontrado en el inventario",
+      });
+    }
+
     res.json(item);
   } catch (error) {
-    res.status(400).json({ message: "Error al obtener el elemento", error: error.message });
+    res.status(400).json({
+      message: "Error al obtener el elemento",
+      error: error.message,
+    });
   }
 };
 
-// Crear un elemento en el inventario
+// =====================================================
+// FUNCIÓN PARA SUBIR IMAGEN A CLOUDINARY
+// =====================================================
+const uploadImageToCloudinary = async (file) => {
+  if (!file) return "";
+
+  try {
+    const result = await cloudinary.uploader.upload(file.path, {
+      folder: "inventory",
+
+      allowed_formats: ["png", "jpg", "jpeg", "webp"],
+
+      // IMPORTANTE:
+      // Ya NO reducimos la imagen a 800x800.
+      // Cloudinary conservará la resolución original.
+      quality: "auto:best",
+
+      // Evita transformaciones que reduzcan innecesariamente
+      // la resolución original.
+      resource_type: "image",
+    });
+
+    // Eliminar archivo temporal
+    await fs.unlink(file.path).catch(() => {});
+
+    return result.secure_url;
+  } catch (error) {
+    // Intentar eliminar archivo temporal aunque falle Cloudinary
+    await fs.unlink(file.path).catch(() => {});
+
+    throw error;
+  }
+};
+
+// =====================================================
+// CREAR ELEMENTO EN EL INVENTARIO
+// =====================================================
 inventoryController.createInventory = async (req, res) => {
   const {
     nombreMaquinaria,
@@ -43,160 +96,243 @@ inventoryController.createInventory = async (req, res) => {
     impuestoPagado,
     costoTransporte,
     precioFinal,
-    observaciones
+    observaciones,
   } = req.body;
 
   try {
-    // Validación de campos obligatorios
-    if (!nombreMaquinaria || !nombreMaquinaria.trim() || costoMaquinaria == null || !numeroContenedor || !fechaCompra) {
-      return res.status(400).json({ message: "Faltan campos obligatorios del inventario" });
+    // -------------------------------------------------
+    // VALIDACIÓN DE CAMPOS OBLIGATORIOS
+    // -------------------------------------------------
+    if (
+      !nombreMaquinaria ||
+      !nombreMaquinaria.trim() ||
+      costoMaquinaria == null ||
+      !numeroContenedor ||
+      !fechaCompra
+    ) {
+      return res.status(400).json({
+        message: "Faltan campos obligatorios del inventario",
+      });
     }
 
-    // Validación de costos
-    if (isNaN(costoMaquinaria) || Number(costoMaquinaria) < 0) {
-      return res.status(400).json({ message: "El costo de la maquinaria debe ser un número mayor o igual a 0" });
+    // -------------------------------------------------
+    // VALIDACIÓN DEL COSTO
+    // -------------------------------------------------
+    if (
+      isNaN(costoMaquinaria) ||
+      Number(costoMaquinaria) < 0
+    ) {
+      return res.status(400).json({
+        message:
+          "El costo de la maquinaria debe ser un número mayor o igual a 0",
+      });
     }
 
-    // Subida de imagen a Cloudinary (soporta req.files array o req.file único)
+    // -------------------------------------------------
+    // SUBIDA DE IMAGEN
+    // -------------------------------------------------
     let imagenUrl = "";
-    
+
     if (req.files && req.files.length > 0) {
-      const file = req.files[0];
-      const result = await cloudinary.uploader.upload(file.path, {
-        folder: "inventory",
-        allowed_formats: ["png", "jpg", "jpeg", "webp"],
-        transformation: [
-          { width: 800, height: 800, crop: "limit" },
-          { quality: "auto" }
-        ]
-      });
-      imagenUrl = result.secure_url;
-      await fs.unlink(file.path); // Elimina el archivo temporal local
+      // Actualmente guardamos la primera imagen,
+      // manteniendo compatibilidad con tu modelo actual.
+      imagenUrl = await uploadImageToCloudinary(req.files[0]);
     } else if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "inventory",
-        allowed_formats: ["png", "jpg", "jpeg", "webp"],
-        transformation: [
-          { width: 800, height: 800, crop: "limit" },
-          { quality: "auto" }
-        ]
-      });
-      imagenUrl = result.secure_url;
-      await fs.unlink(req.file.path);
+      imagenUrl = await uploadImageToCloudinary(req.file);
     } else if (req.body.imagenUrl) {
       imagenUrl = req.body.imagenUrl;
     }
 
-    // Cálculo del precio final si no fue enviado expresamente desde el cliente
+    // -------------------------------------------------
+    // CÁLCULO DEL PRECIO FINAL
+    // -------------------------------------------------
     const costoNum = Number(costoMaquinaria) || 0;
     const impuestoNum = Number(impuestoPagado) || 0;
     const transporteNum = Number(costoTransporte) || 0;
-    const finalCalculado = precioFinal != null ? Number(precioFinal) : (costoNum + impuestoNum + transporteNum);
 
-    // Crear la instancia de Maquinaria/Inventario
+    const finalCalculado =
+      precioFinal != null
+        ? Number(precioFinal)
+        : costoNum + impuestoNum + transporteNum;
+
+    // -------------------------------------------------
+    // CREAR INVENTARIO
+    // -------------------------------------------------
     const newInventory = new Inventory({
       nombreMaquinaria: nombreMaquinaria.trim(),
-      descripcion: descripcion ? descripcion.trim() : "",
+
+      descripcion: descripcion
+        ? descripcion.trim()
+        : "",
+
       costoMaquinaria: costoNum,
+
       numeroContenedor: numeroContenedor.trim(),
+
       fechaCompra,
+
       impuestoPagado: impuestoNum,
+
       costoTransporte: transporteNum,
+
       precioFinal: finalCalculado,
-      observaciones: observaciones ? observaciones.trim() : "",
-      imagenUrl
+
+      observaciones: observaciones
+        ? observaciones.trim()
+        : "",
+
+      imagenUrl,
     });
 
     const savedInventory = await newInventory.save();
+
     res.status(201).json(savedInventory);
   } catch (error) {
-    res.status(500).json({ message: "Error al crear elemento en el inventario", error: error.message });
+    console.error(
+      "Error al crear elemento en el inventario:",
+      error
+    );
+
+    res.status(500).json({
+      message:
+        "Error al crear elemento en el inventario",
+      error: error.message,
+    });
   }
 };
 
-// Actualizar un elemento del inventario
+// =====================================================
+// ACTUALIZAR INVENTARIO
+// =====================================================
 inventoryController.updateInventory = async (req, res) => {
   const { id } = req.params;
   const updates = { ...req.body };
 
   try {
+    // -------------------------------------------------
+    // BUSCAR ELEMENTO
+    // -------------------------------------------------
     const item = await Inventory.findById(id);
-    if (!item) return res.status(404).json({ message: "Elemento de inventario no encontrado" });
 
-    // Validar costo si se actualiza
-    if (updates.costoMaquinaria !== undefined) {
-      if (isNaN(updates.costoMaquinaria) || Number(updates.costoMaquinaria) < 0) {
-        return res.status(400).json({ message: "El costo de la maquinaria debe ser un número válido" });
-      }
-      updates.costoMaquinaria = Number(updates.costoMaquinaria);
+    if (!item) {
+      return res.status(404).json({
+        message:
+          "Elemento de inventario no encontrado",
+      });
     }
 
-    // Procesar nueva imagen si fue subida
-    let nuevaImagenUrl = item.imagenUrl;
+    // -------------------------------------------------
+    // VALIDAR COSTO
+    // -------------------------------------------------
+    if (updates.costoMaquinaria !== undefined) {
+      if (
+        isNaN(updates.costoMaquinaria) ||
+        Number(updates.costoMaquinaria) < 0
+      ) {
+        return res.status(400).json({
+          message:
+            "El costo de la maquinaria debe ser un número válido",
+        });
+      }
+
+      updates.costoMaquinaria =
+        Number(updates.costoMaquinaria);
+    }
+
+    // -------------------------------------------------
+    // PROCESAR NUEVA IMAGEN
+    // -------------------------------------------------
+    let nuevaImagenUrl = item.imagenUrl || "";
 
     if (req.files && req.files.length > 0) {
-      const file = req.files[0];
-      const result = await cloudinary.uploader.upload(file.path, {
-        folder: "inventory",
-        allowed_formats: ["png", "jpg", "jpeg", "webp"],
-        transformation: [
-          { width: 800, height: 800, crop: "limit" },
-          { quality: "auto" }
-        ]
-      });
-      nuevaImagenUrl = result.secure_url;
-      await fs.unlink(file.path);
+      nuevaImagenUrl = await uploadImageToCloudinary(
+        req.files[0]
+      );
     } else if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "inventory",
-        allowed_formats: ["png", "jpg", "jpeg", "webp"],
-        transformation: [
-          { width: 800, height: 800, crop: "limit" },
-          { quality: "auto" }
-        ]
-      });
-      nuevaImagenUrl = result.secure_url;
-      await fs.unlink(req.file.path);
+      nuevaImagenUrl = await uploadImageToCloudinary(
+        req.file
+      );
     } else if (updates.imagenUrl) {
       nuevaImagenUrl = updates.imagenUrl;
     }
 
     item.imagenUrl = nuevaImagenUrl;
 
-    // Aplicar actualizaciones al objeto del documento
-    Object.keys(updates).forEach(key => {
+    // -------------------------------------------------
+    // APLICAR ACTUALIZACIONES
+    // -------------------------------------------------
+    Object.keys(updates).forEach((key) => {
       if (key !== "imagenUrl") {
         item[key] = updates[key];
       }
     });
 
-    // Recalcular el precio final
-    const c = Number(item.costoMaquinaria) || 0;
-    const i = Number(item.impuestoPagado) || 0;
-    const t = Number(item.costoTransporte) || 0;
+    // -------------------------------------------------
+    // RECALCULAR PRECIO FINAL
+    // -------------------------------------------------
+    const c =
+      Number(item.costoMaquinaria) || 0;
+
+    const i =
+      Number(item.impuestoPagado) || 0;
+
+    const t =
+      Number(item.costoTransporte) || 0;
+
     item.precioFinal = c + i + t;
 
-    const updatedInventory = await item.save();
-    res.status(200).json(updatedInventory);
+    // -------------------------------------------------
+    // GUARDAR
+    // -------------------------------------------------
+    const updatedInventory =
+      await item.save();
 
+    res.status(200).json(updatedInventory);
   } catch (error) {
-    console.error("Error al actualizar el inventario:", error);
-    res.status(500).json({ message: "Error al actualizar el inventario", error: error.message });
+    console.error(
+      "Error al actualizar el inventario:",
+      error
+    );
+
+    res.status(500).json({
+      message:
+        "Error al actualizar el inventario",
+      error: error.message,
+    });
   }
 };
 
-// Eliminar un elemento del inventario
-inventoryController.deleteInventory = async (req, res) => {
+// =====================================================
+// ELIMINAR INVENTARIO
+// =====================================================
+inventoryController.deleteInventory = async (
+  req,
+  res
+) => {
   const { id } = req.params;
 
   try {
     const item = await Inventory.findById(id);
-    if (!item) return res.status(404).json({ message: "Elemento de inventario no encontrado" });
+
+    if (!item) {
+      return res.status(404).json({
+        message:
+          "Elemento de inventario no encontrado",
+      });
+    }
 
     await item.deleteOne();
-    res.status(200).json({ message: "Elemento de inventario eliminado exitosamente" });
+
+    res.status(200).json({
+      message:
+        "Elemento de inventario eliminado exitosamente",
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error al eliminar el elemento del inventario", error: error.message });
+    res.status(500).json({
+      message:
+        "Error al eliminar el elemento del inventario",
+      error: error.message,
+    });
   }
 };
 
