@@ -172,6 +172,9 @@ const Products = () => {
                     })
                   : "No especificada";
 
+                // Tomar el valor de precioFinal o price por compatibilidad
+                const valorPrecioFinal = item.precioFinal ?? item.price ?? 0;
+
                 return (
                   <div key={item._id} className="product-card">
                     <div className="product-card-header">
@@ -226,7 +229,7 @@ const Products = () => {
                         </div>
                         <div className="financial-row total">
                           <span>Precio Final:</span>
-                          <span>${formatCurrency(item.precioFinal)}</span>
+                          <span>${formatCurrency(valorPrecioFinal)}</span>
                         </div>
                       </div>
                     </div>
@@ -263,7 +266,12 @@ const Products = () => {
       {editingProductId && (
         <EditProduct
           productId={editingProductId}
-          onClose={() => setEditingProductId(null)}
+          onClose={() => {
+            setEditingProductId(null);
+            if (typeof fetchInventory === "function") {
+              fetchInventory();
+            }
+          }}
           refreshProducts={fetchInventory}
         />
       )}

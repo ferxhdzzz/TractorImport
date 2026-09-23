@@ -18,10 +18,8 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     observaciones: "",
   });
 
-  // previewImages guarda objetos: { url: string, isNew: boolean, file?: File }
   const [previewImages, setPreviewImages] = useState([]);
 
-  // Abrir picker de fecha
   const handleOpenPicker = () => {
     if (fechaCompraRef.current) {
       if (typeof fechaCompraRef.current.showPicker === "function") {
@@ -32,7 +30,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     }
   };
 
-  // Formatear números para mostrar con comas
   const formatNumberWithCommas = (val) => {
     if (val === undefined || val === null || val === "") return "";
     const clean = String(val).replace(/,/g, "");
@@ -49,12 +46,11 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
       : integerPart;
   };
 
-  // Convertir string formateado ("13,000.50") a número puro (13000.50)
   const convertToNumber = (value) => {
+    if (value === undefined || value === null || value === "") return 0;
     return Number(String(value).replace(/,/g, "")) || 0;
   };
 
-  // Evitar desfase de 1 día en zona horaria / UTC
   const formatLocalDate = (dateString) => {
     if (!dateString) return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
@@ -63,9 +59,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     return new Date(dateString).toISOString();
   };
 
-  // ==============================
-  // CARGAR REGISTRO DE MAQUINARIA A EDITAR
-  // ==============================
   useEffect(() => {
     const loadProduct = async () => {
       try {
@@ -77,7 +70,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
         if (!res.ok) throw new Error("No se pudo cargar la maquinaria");
         const data = await res.json();
 
-        // Extraer fecha limpia YYYY-MM-DD
         const formattedDate = data.fechaCompra
           ? new Date(data.fechaCompra).toISOString().split("T")[0]
           : "";
@@ -88,13 +80,12 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
           costoMaquinaria: formatNumberWithCommas(data.costoMaquinaria),
           impuestoPagado: formatNumberWithCommas(data.impuestoPagado),
           costoTransporte: formatNumberWithCommas(data.costoTransporte),
-          precioFinal: formatNumberWithCommas(data.precioFinal || data.price),
+          precioFinal: formatNumberWithCommas(data.precioFinal ?? data.price),
           fechaCompra: formattedDate,
           descripcion: data.descripcion || data.description || "",
           observaciones: data.observaciones || "",
         });
 
-        // Imágenes existentes
         const imagesData = (data.images || []).map((url) => ({
           url,
           isNew: false,
@@ -113,19 +104,19 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     loadProduct();
   }, [productId]);
 
-  // ==============================
-  // MANEJO DE CAMPOS DE TEXTO / FECHA
-  // ==============================
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ==============================
-  // MANEJO DE CAMPOS NUMÉRICOS CON COMAS
-  // ==============================
+  // Manejo de edición 100% independiente para cada campo numérico
   const handleNumberInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (value === "") {
+      setFormData((prev) => ({ ...prev, [name]: "" }));
+      return;
+    }
 
     let cleanValue = value.replace(/[^\d.,]/g, "").replace(/,/g, "");
     const parts = cleanValue.split(".");
@@ -148,9 +139,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     }));
   };
 
-  // ==============================
-  // REEMPLAZAR UNA IMAGEN EXISTENTE
-  // ==============================
   const handleImageClick = (index) => {
     const input = document.createElement("input");
     input.type = "file";
@@ -176,9 +164,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     input.click();
   };
 
-  // ==============================
-  // AGREGAR NUEVAS IMÁGENES
-  // ==============================
   const handleAddImages = (e) => {
     const files = Array.from(e.target.files);
 
@@ -205,13 +190,9 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     }));
 
     setPreviewImages((prev) => [...prev, ...newImagesObjs]);
-
     e.target.value = "";
   };
 
-  // ==============================
-  // ELIMINAR IMAGEN
-  // ==============================
   const handleDeleteImage = (index) => {
     Swal.fire({
       title: "¿Eliminar esta imagen?",
@@ -233,9 +214,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     });
   };
 
-  // ==============================
-  // ENVIAR FORMULARIO (PUT)
-  // ==============================
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -243,27 +221,24 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     try {
       const form = new FormData();
 
-      // Campos de texto y fechas
       form.append("nombreMaquinaria", formData.nombreMaquinaria.trim());
       form.append("numeroContenedor", formData.numeroContenedor.trim());
       form.append("fechaCompra", formatLocalDate(formData.fechaCompra));
       form.append("descripcion", formData.descripcion.trim());
       form.append("observaciones", formData.observaciones.trim());
 
-      // Convertir campos de texto formateados a número puro
+      // Enviamos el valor libre que el usuario escribió en el campo
       form.append("costoMaquinaria", convertToNumber(formData.costoMaquinaria));
       form.append("impuestoPagado", convertToNumber(formData.impuestoPagado));
       form.append("costoTransporte", convertToNumber(formData.costoTransporte));
       form.append("precioFinal", convertToNumber(formData.precioFinal));
 
-      // Imágenes existentes
       const existingImages = previewImages
         .filter((img) => !img.isNew)
         .map((img) => img.url);
 
       form.append("existingImages", JSON.stringify(existingImages));
 
-      // Imágenes nuevas
       previewImages
         .filter((img) => img.isNew && img.file)
         .forEach((img) => {
@@ -317,7 +292,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
 
         <form onSubmit={handleSubmit}>
           <div className="land-form-grid">
-            {/* Nombre de la Maquinaria */}
             <div className="land-field-group">
               <label>Nombre de la Maquinaria *</label>
               <input
@@ -331,7 +305,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {/* Número de Contenedor */}
             <div className="land-field-group">
               <label>Número de Serie</label>
               <input
@@ -344,7 +317,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {/* Costo Maquinaria */}
             <div className="land-field-group">
               <label>Costo de Maquinaria ($)</label>
               <input
@@ -358,7 +330,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {/* Impuesto Pagado */}
             <div className="land-field-group">
               <label>Impuesto Pagado ($)</label>
               <input
@@ -372,7 +343,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {/* Costo Transporte */}
             <div className="land-field-group">
               <label>Costo de Transporte ($)</label>
               <input
@@ -386,9 +356,9 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {/* Precio Final */}
+            {/* Campo totalmente editable e independiente */}
             <div className="land-field-group">
-              <label>Precio Final de Venta ($) *</label>
+              <label>Precio Final de Venta ($)</label>
               <input
                 type="text"
                 inputMode="decimal"
@@ -396,12 +366,10 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
                 value={formData.precioFinal}
                 onChange={handleNumberInputChange}
                 placeholder="0.00"
-                required
                 className="land-input-field"
               />
             </div>
 
-            {/* Fecha de Compra */}
             <div className="land-field-group">
               <label>Fecha de Compra</label>
               <div style={{ position: "relative", width: "100%", cursor: "pointer" }}>
@@ -447,9 +415,8 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               </div>
             </div>
 
-            {/* Agregar más imágenes */}
             <div className="land-field-group">
-              <label>Cambiar imagen</label>
+              <label>Cambiar / Agregar imagen</label>
               <input
                 type="file"
                 multiple
@@ -459,7 +426,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {/* Descripción */}
             <div className="land-field-group full-width">
               <label>Descripción</label>
               <textarea
@@ -471,7 +437,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {/* Observaciones */}
             <div className="land-field-group full-width">
               <label>Observaciones</label>
               <textarea
@@ -483,7 +448,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {/* Imágenes actuales */}
             {previewImages.length > 0 && (
               <div className="land-field-group full-width">
                 <label>Imágenes actuales (haz clic para reemplazar)</label>
@@ -512,7 +476,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
             )}
           </div>
 
-          {/* Botones de Acción */}
           <div className="land-modal-actions">
             <button
               type="button"
