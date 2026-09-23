@@ -121,7 +121,7 @@ const AddGastoModal = ({ onClose, refreshGastos }) => {
     };
 
     try {
-      const res = await fetch("http://localhost:4000/api/gastos", {
+      const res = await fetch("https://tractorimport.onrender.com/api/gastos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
