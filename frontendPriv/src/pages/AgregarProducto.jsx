@@ -14,10 +14,9 @@ export default function AddInventoryPage() {
     descripcion: "",
     costoMaquinaria: "",
     numeroContenedor: "",
-    fechaCompra: "",
+    fechaCompra: new Date().toISOString().split("T")[0],
     impuestoPagado: "",
     costoTransporte: "",
-    precioFinal: "",
     observaciones: "",
     images: [],
   });
@@ -41,28 +40,43 @@ export default function AddInventoryPage() {
     }));
   };
 
+  // Convertir un número formateado como "13,000.50" a valor numérico puro 13000.50
+  const convertToNumber = (value) => {
+    return Number(String(value).replace(/,/g, "")) || 0;
+  };
+
+  // Formatear números con comas para la vista (Ej: 13500 -> "13,500.00")
+  const formatNumberWithCommas = (val) => {
+    if (val === undefined || val === null || val === "") return "";
+    const clean = String(val).replace(/,/g, "");
+    const parts = clean.split(".");
+    let integerPart = parts[0];
+    const decimalPart = parts[1];
+
+    if (integerPart) {
+      integerPart = Number(integerPart).toLocaleString("en-US");
+    }
+
+    return decimalPart !== undefined
+      ? `${integerPart}.${decimalPart.slice(0, 2)}`
+      : integerPart;
+  };
+
   // Formatear campos numéricos con comas
   const handleNumberInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Permitir únicamente números, comas y punto decimal
-    let cleanValue = value.replace(/[^\d.,]/g, "");
+    let cleanValue = value.replace(/[^\d.,]/g, "").replace(/,/g, "");
 
-    // Eliminar comas anteriores para poder volver a formatear
-    cleanValue = cleanValue.replace(/,/g, "");
-
-    // Separar parte entera y decimal
     const parts = cleanValue.split(".");
 
     let integerPart = parts[0];
     const decimalPart = parts[1];
 
-    // Formatear la parte entera con comas
     if (integerPart) {
       integerPart = Number(integerPart).toLocaleString("en-US");
     }
 
-    // Reconstruir el valor conservando los decimales
     const formattedValue =
       decimalPart !== undefined
         ? `${integerPart}.${decimalPart.slice(0, 2)}`
@@ -74,10 +88,11 @@ export default function AddInventoryPage() {
     }));
   };
 
-  // Convertir un número formateado como "13,000.50" a 13000.50
-  const convertToNumber = (value) => {
-    return Number(String(value).replace(/,/g, "")) || 0;
-  };
+  // Cálculo Dinámico en Tiempo Real del Precio Final
+  const costoMaq = convertToNumber(formData.costoMaquinaria);
+  const impuesto = convertToNumber(formData.impuestoPagado);
+  const transporte = convertToNumber(formData.costoTransporte);
+  const precioFinalCalculado = costoMaq + impuesto + transporte;
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -156,10 +171,9 @@ export default function AddInventoryPage() {
       formData.descripcion.trim()
     );
 
-    // Quitar las comas antes de enviar al backend
     data.append(
       "costoMaquinaria",
-      convertToNumber(formData.costoMaquinaria)
+      costoMaq
     );
 
     data.append(
@@ -174,17 +188,17 @@ export default function AddInventoryPage() {
 
     data.append(
       "impuestoPagado",
-      convertToNumber(formData.impuestoPagado)
+      impuesto
     );
 
     data.append(
       "costoTransporte",
-      convertToNumber(formData.costoTransporte)
+      transporte
     );
 
     data.append(
       "precioFinal",
-      convertToNumber(formData.precioFinal)
+      precioFinalCalculado
     );
 
     data.append(
@@ -222,10 +236,9 @@ export default function AddInventoryPage() {
         descripcion: "",
         costoMaquinaria: "",
         numeroContenedor: "",
-        fechaCompra: "",
+        fechaCompra: new Date().toISOString().split("T")[0],
         impuestoPagado: "",
         costoTransporte: "",
-        precioFinal: "",
         observaciones: "",
         images: [],
       });
@@ -272,7 +285,7 @@ export default function AddInventoryPage() {
               </div>
 
               <div className="form-group">
-                <label>Número de Serie</label>
+                <label>Número de Serie / Contenedor</label>
 
                 <input
                   type="text"
@@ -368,7 +381,6 @@ export default function AddInventoryPage() {
             </div>
 
             <div className="form-row">
-
               {/* Costo Maquinaria */}
               <div className="form-group">
                 <label>Costo Maquinaria ($)</label>
@@ -412,18 +424,19 @@ export default function AddInventoryPage() {
                 />
               </div>
 
-              {/* Precio Final */}
+              {/* Precio Final Calculado Dinámicamente */}
               <div className="form-group">
-                <label>Precio Final ($)</label>
+                <label>Precio Final Calculado ($)</label>
 
                 <input
                   type="text"
-                  inputMode="decimal"
-                  name="precioFinal"
-                  placeholder="0.00"
-                  value={formData.precioFinal}
-                  onChange={handleNumberInputChange}
-                  required
+                  readOnly
+                  value={`$${formatNumberWithCommas(precioFinalCalculado)}`}
+                  style={{
+                    fontWeight: "bold",
+                    color: "#059669",
+                    backgroundColor: "#f8fafc",
+                  }}
                 />
               </div>
             </div>
