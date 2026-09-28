@@ -149,7 +149,7 @@ inventoryController.createInventory = async (req, res) => {
 };
 
 // =====================================================
-// ACTUALIZAR INVENTARIO (CONSERVANDO IMÁGENES EXISTENTES Y CAMPOS OPCIONALES)
+// ACTUALIZAR INVENTARIO (PERMITE BORRAR, REEMPLAZAR Y CONSERVAR IMÁGENES)
 // =====================================================
 inventoryController.updateInventory = async (req, res) => {
   const { id } = req.params;
@@ -186,7 +186,7 @@ inventoryController.updateInventory = async (req, res) => {
       item.numeroContenedor = updates.numeroContenedor.trim();
     }
     if (updates.fechaCompra !== undefined) {
-      item.fechaCompra = updates.fechaCompra;
+      item.fechaCompra = updates.fechaCompra || null;
     }
     if (updates.descripcion !== undefined) {
       item.descripcion = updates.descripcion.trim();
@@ -195,9 +195,10 @@ inventoryController.updateInventory = async (req, res) => {
       item.observaciones = updates.observaciones.trim();
     }
 
-    // PROCESAMIENTO CONSERVATIVO DE IMÁGENES
+    // PROCESAMIENTO DE IMÁGENES
     let finalImages = [];
 
+    // 1. Si el frontend envía 'existingImages', usamos esa lista
     if (updates.existingImages !== undefined) {
       try {
         finalImages = typeof updates.existingImages === "string"
@@ -209,9 +210,11 @@ inventoryController.updateInventory = async (req, res) => {
           : [];
       }
     } else {
+      // Si el frontend no envió la clave 'existingImages', conservamos lo que ya estaba
       finalImages = item.images && item.images.length > 0 ? [...item.images] : (item.imagenUrl ? [item.imagenUrl] : []);
     }
 
+    // 2. Si se subieron archivos nuevos, los subimos a Cloudinary y los agregamos
     if (req.files && req.files.length > 0) {
       const newUploads = await Promise.all(
         req.files.map((file) => uploadImageToCloudinary(file))
@@ -222,13 +225,9 @@ inventoryController.updateInventory = async (req, res) => {
       if (singleUrl) finalImages.push(singleUrl);
     }
 
-    if (finalImages.length > 0) {
-      item.images = finalImages;
-      item.imagenUrl = finalImages[0];
-    } else {
-      item.images = item.images || [];
-      item.imagenUrl = item.imagenUrl || "";
-    }
+    // 3. Asignación directa: Si el usuario borró la imagen en el modal, finalImages será [] y se vaciará en la DB
+    item.images = Array.isArray(finalImages) ? finalImages : [];
+    item.imagenUrl = finalImages.length > 0 ? finalImages[0] : "";
 
     const updatedInventory = await item.save();
 

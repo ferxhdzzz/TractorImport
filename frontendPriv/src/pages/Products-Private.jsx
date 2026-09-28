@@ -7,7 +7,6 @@ import Button from "../components/Componte-hook/Button";
 import Sidebar from "../components/Sidebar/Sidebar";
 import Topbar from "../components/TopBar/TopBar";
 import EditProduct from "../hooks/Unified/EditProduct";
-import ImageSlider from "../components/Componte-hook/ImageSlider";
 import { useDataProduct } from "../hooks/Unified/UseDataProduct";
 
 import "../styles/PaginaProduct.css";
@@ -211,6 +210,10 @@ const Products = () => {
                   : "No especificada";
 
                 const valorPrecioFinal = item.precioFinal ?? item.price ?? 0;
+                const singleImgSrc =
+                  Array.isArray(item.images) && item.images.length > 0
+                    ? item.images[0]
+                    : item.imagenUrl || null;
 
                 return (
                   <div key={item._id} className="product-card">
@@ -220,7 +223,7 @@ const Products = () => {
                     </div>
 
                     <div className="product-card-body">
-                      {/* Galería / Imágenes con clic para expandir */}
+                      {/* Imagen Individual de la Maquinaria */}
                       <div
                         className="product-image-section"
                         onClick={(e) => {
@@ -228,22 +231,29 @@ const Products = () => {
                             handleOpenImageModal(e.target.src);
                           }
                         }}
-                        style={{ cursor: "pointer" }}
-                        title="Haz clic para ver la imagen en grande"
+                        style={{ cursor: singleImgSrc ? "pointer" : "default" }}
+                        title={singleImgSrc ? "Haz clic para ver la imagen en grande" : "Sin imagen"}
                       >
-                        {Array.isArray(item.images) && item.images.length > 0 ? (
-                          <ImageSlider images={item.images} name={item.nombreMaquinaria} />
-                        ) : item.imagenUrl ? (
-                          <ImageSlider images={[item.imagenUrl]} name={item.nombreMaquinaria} />
+                        {singleImgSrc ? (
+                          <img
+                            src={singleImgSrc}
+                            alt={item.nombreMaquinaria || "Imagen de maquinaria"}
+                            style={{
+                              width: "100%",
+                              height: "220px",
+                              objectFit: "cover",
+                              borderRadius: "8px",
+                            }}
+                          />
                         ) : (
-                          <p className="no-image">Sin imágenes</p>
+                          <p className="no-image">Sin imagen disponible</p>
                         )}
                       </div>
 
                       {/* Detalles */}
                       <div className="product-details-section">
                         <p>
-                          <strong>Serie:</strong> {item.numeroContenedor || "N/A"}
+                          <strong>Serie:</strong> {item.numeroContenedor || "Sin numero de serie"}
                         </p>
                         <p>
                           <strong>Descripción:</strong> {item.descripcion || "Sin descripción disponible."}
@@ -286,7 +296,7 @@ const Products = () => {
                       </Button>
                       <Button
                         onClick={() => handleDelete(item._id, item.nombreMaquinaria)}
-                        style={{ backgroundColor: "#4C8F3F", color: "#ffffff", borderRadius: "6px" }}
+                        style={{ backgroundColor: "#dc3545", color: "#ffffff", borderRadius: "6px" }}
                       >
                         Eliminar
                       </Button>

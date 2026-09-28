@@ -18,7 +18,8 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     observaciones: "",
   });
 
-  const [previewImages, setPreviewImages] = useState([]);
+  // Manejo de UNA sola imagen en edición
+  const [previewImage, setPreviewImage] = useState(null);
 
   const handleOpenPicker = () => {
     if (fechaCompraRef.current) {
@@ -86,11 +87,15 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
           observaciones: data.observaciones || "",
         });
 
-        const imagesData = (data.images || []).map((url) => ({
-          url,
-          isNew: false,
-        }));
-        setPreviewImages(imagesData);
+        // Configurar la imagen (toma la primera de images o imagenUrl)
+        const singleImgSrc =
+          Array.isArray(data.images) && data.images.length > 0
+            ? data.images[0]
+            : data.imagenUrl || null;
+
+        if (singleImgSrc) {
+          setPreviewImage({ url: singleImgSrc, isNew: false });
+        }
       } catch (err) {
         console.error(err);
         Swal.fire({
@@ -109,7 +114,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Manejo de edición 100% independiente para cada campo numérico
   const handleNumberInputChange = (e) => {
     const { name, value } = e.target;
 
@@ -139,7 +143,8 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     }));
   };
 
-  const handleImageClick = (index) => {
+  // Click sobre la imagen existente (o área vacía) para reemplazar/subir
+  const handleImageClick = () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -147,53 +152,18 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     input.onchange = (e) => {
       const file = e.target.files[0];
       if (file) {
-        if (previewImages[index].isNew) {
-          URL.revokeObjectURL(previewImages[index].url);
+        if (previewImage && previewImage.isNew) {
+          URL.revokeObjectURL(previewImage.url);
         }
-
         const newUrl = URL.createObjectURL(file);
-
-        setPreviewImages((prev) => {
-          const copy = [...prev];
-          copy[index] = { url: newUrl, isNew: true, file };
-          return copy;
-        });
+        setPreviewImage({ url: newUrl, isNew: true, file });
       }
     };
 
     input.click();
   };
 
-  const handleAddImages = (e) => {
-    const files = Array.from(e.target.files);
-
-    const filteredFiles = files.filter((file) => {
-      return !previewImages.some(
-        (img) =>
-          img.isNew &&
-          img.file &&
-          img.file.name === file.name &&
-          img.file.size === file.size &&
-          img.file.lastModified === file.lastModified
-      );
-    });
-
-    if (filteredFiles.length === 0) {
-      e.target.value = "";
-      return;
-    }
-
-    const newImagesObjs = filteredFiles.map((file) => ({
-      url: URL.createObjectURL(file),
-      isNew: true,
-      file,
-    }));
-
-    setPreviewImages((prev) => [...prev, ...newImagesObjs]);
-    e.target.value = "";
-  };
-
-  const handleDeleteImage = (index) => {
+  const handleDeleteImage = () => {
     Swal.fire({
       title: "¿Eliminar esta imagen?",
       icon: "warning",
@@ -204,12 +174,10 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
       cancelButtonText: "Cancelar",
     }).then((result) => {
       if (result.isConfirmed) {
-        setPreviewImages((prev) => {
-          if (prev[index].isNew) {
-            URL.revokeObjectURL(prev[index].url);
-          }
-          return prev.filter((_, i) => i !== index);
-        });
+        if (previewImage && previewImage.isNew) {
+          URL.revokeObjectURL(previewImage.url);
+        }
+        setPreviewImage(null);
       }
     });
   };
@@ -223,27 +191,34 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
 
       form.append("nombreMaquinaria", formData.nombreMaquinaria.trim());
       form.append("numeroContenedor", formData.numeroContenedor.trim());
-      form.append("fechaCompra", formatLocalDate(formData.fechaCompra));
+      
+      if (formData.fechaCompra) {
+        form.append("fechaCompra", formatLocalDate(formData.fechaCompra));
+      } else {
+        // Enviar un valor nulo/vacío si se eliminó la fecha
+        form.append("fechaCompra", "");
+      }
+
       form.append("descripcion", formData.descripcion.trim());
       form.append("observaciones", formData.observaciones.trim());
 
-      // Enviamos el valor libre que el usuario escribió en el campo
       form.append("costoMaquinaria", convertToNumber(formData.costoMaquinaria));
       form.append("impuestoPagado", convertToNumber(formData.impuestoPagado));
       form.append("costoTransporte", convertToNumber(formData.costoTransporte));
       form.append("precioFinal", convertToNumber(formData.precioFinal));
 
-      const existingImages = previewImages
-        .filter((img) => !img.isNew)
-        .map((img) => img.url);
-
-      form.append("existingImages", JSON.stringify(existingImages));
-
-      previewImages
-        .filter((img) => img.isNew && img.file)
-        .forEach((img) => {
-          form.append("images", img.file);
-        });
+      // 1. Manejo crucial para que se borre de la DB si es eliminada
+      if (!previewImage) {
+        // Si no hay imagen (el usuario la borró), enviamos array vacío para que pise lo anterior en la DB
+        form.append("existingImages", JSON.stringify([]));
+      } else if (!previewImage.isNew) {
+        // Si hay imagen pero es la vieja, mandamos la url para conservarla
+        form.append("existingImages", JSON.stringify([previewImage.url]));
+      } else {
+        // Si es una imagen nueva subida, NO mandamos existingImages (así el backend asume que borró las viejas y guardará solo la nueva)
+        form.append("existingImages", JSON.stringify([]));
+        form.append("images", previewImage.file);
+      }
 
       const res = await fetch(
         `https://tractorimport.onrender.com/api/products/${productId}`,
@@ -356,7 +331,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {/* Campo totalmente editable e independiente */}
             <div className="land-field-group">
               <label>Precio Final de Venta ($)</label>
               <input
@@ -415,17 +389,6 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               </div>
             </div>
 
-            <div className="land-field-group">
-              <label>Cambiar / Agregar imagen</label>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleAddImages}
-                className="land-input-field"
-              />
-            </div>
-
             <div className="land-field-group full-width">
               <label>Descripción</label>
               <textarea
@@ -448,32 +411,78 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
               />
             </div>
 
-            {previewImages.length > 0 && (
-              <div className="land-field-group full-width">
-                <label>Imágenes actuales (haz clic para reemplazar)</label>
-                <div className="edit-image-preview">
-                  {previewImages.map((img, index) => (
-                    <div key={index} className="img-container">
-                      <img
-                        src={img.url}
-                        alt={`preview-${index}`}
-                        className="editable-img"
-                        onClick={() => handleImageClick(index)}
-                        title="Click para reemplazar"
-                      />
-                      <button
-                        type="button"
-                        className="delete-img-btn"
-                        onClick={() => handleDeleteImage(index)}
-                        aria-label="Eliminar imagen"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
+            <div className="land-field-group full-width">
+              <label>Imagen de Maquinaria</label>
+              
+              <div 
+                className="edit-image-preview" 
+                style={{ 
+                  display: "flex", 
+                  justifyContent: "flex-start", 
+                  gap: "10px" 
+                }}
+              >
+                {previewImage ? (
+                  <div className="img-container" style={{ position: "relative" }}>
+                    <img
+                      src={previewImage.url}
+                      alt="preview"
+                      className="editable-img"
+                      onClick={handleImageClick}
+                      title="Click para reemplazar"
+                      style={{ 
+                        cursor: "pointer", 
+                        width: "150px", 
+                        height: "150px", 
+                        objectFit: "cover", 
+                        borderRadius: "8px" 
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="delete-img-btn"
+                      onClick={handleDeleteImage}
+                      aria-label="Eliminar imagen"
+                      style={{
+                        position: "absolute",
+                        top: "5px",
+                        right: "5px",
+                        background: "rgba(220, 53, 69, 0.9)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "24px",
+                        height: "24px",
+                        cursor: "pointer",
+                        fontWeight: "bold"
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={handleImageClick}
+                    style={{
+                      width: "150px",
+                      height: "150px",
+                      border: "2px dashed #1C4024",
+                      borderRadius: "8px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      color: "#1C4024",
+                      backgroundColor: "#f9fafb"
+                    }}
+                  >
+                    <span style={{ fontSize: "2rem", lineHeight: "1" }}>+</span>
+                    <span style={{ fontSize: "0.85rem", marginTop: "5px" }}>Agregar foto</span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           <div className="land-modal-actions">
