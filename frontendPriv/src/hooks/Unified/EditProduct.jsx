@@ -182,79 +182,81 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const form = new FormData();
+  try {
+    const form = new FormData();
 
-      form.append("nombreMaquinaria", formData.nombreMaquinaria.trim());
-      form.append("numeroContenedor", formData.numeroContenedor.trim());
-      
-      if (formData.fechaCompra) {
-        form.append("fechaCompra", formatLocalDate(formData.fechaCompra));
-      } else {
-        // Enviar un valor nulo/vacío si se eliminó la fecha
-        form.append("fechaCompra", "");
-      }
-
-      form.append("descripcion", formData.descripcion.trim());
-      form.append("observaciones", formData.observaciones.trim());
-
-      form.append("costoMaquinaria", convertToNumber(formData.costoMaquinaria));
-      form.append("impuestoPagado", convertToNumber(formData.impuestoPagado));
-      form.append("costoTransporte", convertToNumber(formData.costoTransporte));
-      form.append("precioFinal", convertToNumber(formData.precioFinal));
-
-      // 1. Manejo crucial para que se borre de la DB si es eliminada
-      if (!previewImage) {
-        // Si no hay imagen (el usuario la borró), enviamos array vacío para que pise lo anterior en la DB
-        form.append("existingImages", JSON.stringify([]));
-      } else if (!previewImage.isNew) {
-        // Si hay imagen pero es la vieja, mandamos la url para conservarla
-        form.append("existingImages", JSON.stringify([previewImage.url]));
-      } else {
-        // Si es una imagen nueva subida, NO mandamos existingImages (así el backend asume que borró las viejas y guardará solo la nueva)
-        form.append("existingImages", JSON.stringify([]));
-        form.append("images", previewImage.file);
-      }
-
-      const res = await fetch(
-        `https://tractorimport.onrender.com/api/products/${productId}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          body: form,
-        }
-      );
-
-      const resJson = await res.json();
-
-      if (!res.ok) throw new Error(resJson.message || "Error al actualizar");
-
-      await refreshProducts();
-      setLoading(false);
-
-      await Swal.fire({
-        icon: "success",
-        title: "Maquinaria actualizada",
-        text: "Los datos de la maquinaria fueron guardados correctamente.",
-        confirmButtonColor: "#be185d",
-      });
-
-      onClose();
-    } catch (err) {
-      setLoading(false);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: err.message,
-        confirmButtonColor: "#be185d",
-      });
+    form.append("nombreMaquinaria", formData.nombreMaquinaria.trim());
+    form.append("numeroContenedor", formData.numeroContenedor.trim());
+    
+    if (formData.fechaCompra) {
+      form.append("fechaCompra", formatLocalDate(formData.fechaCompra));
+    } else {
+      form.append("fechaCompra", "");
     }
-  };
 
+    form.append("descripcion", formData.descripcion.trim());
+    form.append("observaciones", formData.observaciones.trim());
+
+    form.append("costoMaquinaria", convertToNumber(formData.costoMaquinaria));
+    form.append("impuestoPagado", convertToNumber(formData.impuestoPagado));
+    form.append("costoTransporte", convertToNumber(formData.costoTransporte));
+    form.append("precioFinal", convertToNumber(formData.precioFinal));
+
+    // MANEJO ESTRICTO DE IMAGEN ÚNICA
+    if (!previewImage) {
+      // 1. Si el usuario borró la imagen: enviamos un array vacío explícito
+      form.append("existingImages", JSON.stringify([]));
+    } else if (!previewImage.isNew) {
+      // 2. Si conserva la imagen existente: enviamos su URL
+      form.append("existingImages", JSON.stringify([previewImage.url]));
+    } else {
+      // 3. Si la reemplazó por una nueva foto local: no hay imágenes previas, adjuntamos el archivo nuevo
+      form.append("existingImages", JSON.stringify([]));
+      form.append("images", previewImage.file); // Adjuntamos el archivo binario
+    }
+
+    const res = await fetch(
+      `https://tractorimport.onrender.com/api/products/${productId}`,
+      {
+        method: "PUT",
+        credentials: "include",
+        body: form,
+      }
+    );
+
+    const resJson = await res.json();
+
+    if (!res.ok) throw new Error(resJson.message || "Error al actualizar");
+
+    // Actualizamos el inventario en el estado padre (Products.jsx)
+    if (typeof refreshProducts === "function") {
+      await refreshProducts();
+    }
+
+    setLoading(false);
+
+    await Swal.fire({
+      icon: "success",
+      title: "Maquinaria actualizada",
+      text: "Los datos de la maquinaria fueron guardados correctamente.",
+      confirmButtonColor: "#be185d",
+    });
+
+    onClose();
+  } catch (err) {
+    setLoading(false);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: err.message,
+      confirmButtonColor: "#be185d",
+    });
+  }
+};
   return (
     <div className="land-modal-overlay" onClick={onClose}>
       <div className="land-modal-card" onClick={(e) => e.stopPropagation()}>
