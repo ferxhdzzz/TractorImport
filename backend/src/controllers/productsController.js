@@ -74,7 +74,7 @@ const uploadImageToCloudinary = async (file) => {
 };
 
 // =====================================================
-// CREAR ELEMENTO EN EL INVENTARIO
+// CREAR ELEMENTO EN EL INVENTARIO (TODOS LOS CAMPOS OPCIONALES)
 // =====================================================
 inventoryController.createInventory = async (req, res) => {
   const {
@@ -90,23 +90,15 @@ inventoryController.createInventory = async (req, res) => {
   } = req.body;
 
   try {
-    if (
-      !nombreMaquinaria ||
-      !nombreMaquinaria.trim() ||
-      costoMaquinaria == null ||
-      !numeroContenedor ||
-      !fechaCompra
-    ) {
-      return res.status(400).json({
-        message: "Faltan campos obligatorios del inventario",
-      });
-    }
+    // Manejo seguro de valores numéricos opcionales
+    const costoNum = costoMaquinaria != null && costoMaquinaria !== "" ? Number(costoMaquinaria) || 0 : 0;
+    const impuestoNum = Number(impuestoPagado) || 0;
+    const transporteNum = Number(costoTransporte) || 0;
 
-    const costoNum = Number(costoMaquinaria);
-    if (isNaN(costoNum) || costoNum < 0) {
+    // Validación opcional de rango solo si el costo viene especificado y es negativo
+    if (costoNum < 0) {
       return res.status(400).json({
-        message:
-          "El costo de la maquinaria debe ser un número mayor o igual a 0",
+        message: "El costo de la maquinaria debe ser un número mayor o igual a 0",
       });
     }
 
@@ -124,20 +116,17 @@ inventoryController.createInventory = async (req, res) => {
       uploadedImages.push(req.body.imagenUrl);
     }
 
-    const impuestoNum = Number(impuestoPagado) || 0;
-    const transporteNum = Number(costoTransporte) || 0;
-
     const finalValue =
       precioFinal !== undefined && precioFinal !== null && precioFinal !== ""
-        ? Number(precioFinal)
+        ? Number(precioFinal) || 0
         : costoNum + impuestoNum + transporteNum;
 
     const newInventory = new Inventory({
-      nombreMaquinaria: nombreMaquinaria.trim(),
+      nombreMaquinaria: nombreMaquinaria ? nombreMaquinaria.trim() : "",
       descripcion: descripcion ? descripcion.trim() : "",
       costoMaquinaria: costoNum,
-      numeroContenedor: numeroContenedor.trim(),
-      fechaCompra,
+      numeroContenedor: numeroContenedor ? numeroContenedor.trim() : "",
+      fechaCompra: fechaCompra || null,
       impuestoPagado: impuestoNum,
       costoTransporte: transporteNum,
       precioFinal: isNaN(finalValue) ? 0 : finalValue,
@@ -160,7 +149,7 @@ inventoryController.createInventory = async (req, res) => {
 };
 
 // =====================================================
-// ACTUALIZAR INVENTARIO (CONSERVANDO IMÁGENES EXISTENTES)
+// ACTUALIZAR INVENTARIO (CONSERVANDO IMÁGENES EXISTENTES Y CAMPOS OPCIONALES)
 // =====================================================
 inventoryController.updateInventory = async (req, res) => {
   const { id } = req.params;
@@ -209,7 +198,6 @@ inventoryController.updateInventory = async (req, res) => {
     // PROCESAMIENTO CONSERVATIVO DE IMÁGENES
     let finalImages = [];
 
-    // 1. Verificar si el frontend envió una lista explícita de imágenes existentes
     if (updates.existingImages !== undefined) {
       try {
         finalImages = typeof updates.existingImages === "string"
@@ -221,11 +209,9 @@ inventoryController.updateInventory = async (req, res) => {
           : [];
       }
     } else {
-      // Si el frontend no envió existingImages, conservar las que ya están en la base de datos
       finalImages = item.images && item.images.length > 0 ? [...item.images] : (item.imagenUrl ? [item.imagenUrl] : []);
     }
 
-    // 2. Si se subieron archivos nuevos, subirlos y sumarlos a la lista
     if (req.files && req.files.length > 0) {
       const newUploads = await Promise.all(
         req.files.map((file) => uploadImageToCloudinary(file))
@@ -236,12 +222,10 @@ inventoryController.updateInventory = async (req, res) => {
       if (singleUrl) finalImages.push(singleUrl);
     }
 
-    // 3. Asignar imágenes al objeto antes de guardar
     if (finalImages.length > 0) {
       item.images = finalImages;
       item.imagenUrl = finalImages[0];
     } else {
-      // Mantenimiento de respaldo por si finalImages quedaba vacío por error de parseo
       item.images = item.images || [];
       item.imagenUrl = item.imagenUrl || "";
     }

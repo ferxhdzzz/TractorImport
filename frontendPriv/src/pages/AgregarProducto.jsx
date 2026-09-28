@@ -42,6 +42,7 @@ export default function AddInventoryPage() {
 
   // Convertir un número formateado como "13,000.50" a valor numérico puro 13000.50
   const convertToNumber = (value) => {
+    if (value === undefined || value === null || value === "") return 0;
     return Number(String(value).replace(/,/g, "")) || 0;
   };
 
@@ -66,8 +67,12 @@ export default function AddInventoryPage() {
   const handleNumberInputChange = (e) => {
     const { name, value } = e.target;
 
-    let cleanValue = value.replace(/[^\d.,]/g, "").replace(/,/g, "");
+    if (value === "") {
+      setFormData((prev) => ({ ...prev, [name]: "" }));
+      return;
+    }
 
+    let cleanValue = value.replace(/[^\d.,]/g, "").replace(/,/g, "");
     const parts = cleanValue.split(".");
 
     let integerPart = parts[0];
@@ -123,87 +128,38 @@ export default function AddInventoryPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.nombreMaquinaria.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Falta Nombre",
-        text: "Por favor ingresa el nombre de la maquinaria",
-        confirmButtonColor: "#1C4024",
-      });
-
-      return;
-    }
-
-    if (!formData.numeroContenedor.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Falta Contenedor",
-        text: "Ingresa el número de serie",
-        confirmButtonColor: "#1C4024",
-      });
-
-      return;
-    }
-
-    if (formData.images.length === 0) {
-      Swal.fire({
-        icon: "warning",
-        title: "Falta Imagen",
-        text: "Debes subir al menos una imagen de la maquinaria",
-        confirmButtonColor: "#1C4024",
-      });
-
-      return;
-    }
-
     setLoading(true);
 
     const data = new FormData();
 
     data.append(
       "nombreMaquinaria",
-      formData.nombreMaquinaria.trim()
+      formData.nombreMaquinaria ? formData.nombreMaquinaria.trim() : ""
     );
 
     data.append(
       "descripcion",
-      formData.descripcion.trim()
+      formData.descripcion ? formData.descripcion.trim() : ""
     );
 
-    data.append(
-      "costoMaquinaria",
-      costoMaq
-    );
+    data.append("costoMaquinaria", costoMaq);
 
     data.append(
       "numeroContenedor",
-      formData.numeroContenedor.trim()
+      formData.numeroContenedor ? formData.numeroContenedor.trim() : ""
     );
 
-    data.append(
-      "fechaCompra",
-      formatLocalDate(formData.fechaCompra)
-    );
+    if (formData.fechaCompra) {
+      data.append("fechaCompra", formatLocalDate(formData.fechaCompra));
+    }
 
-    data.append(
-      "impuestoPagado",
-      impuesto
-    );
-
-    data.append(
-      "costoTransporte",
-      transporte
-    );
-
-    data.append(
-      "precioFinal",
-      precioFinalCalculado
-    );
+    data.append("impuestoPagado", impuesto);
+    data.append("costoTransporte", transporte);
+    data.append("precioFinal", precioFinalCalculado);
 
     data.append(
       "observaciones",
-      formData.observaciones.trim()
+      formData.observaciones ? formData.observaciones.trim() : ""
     );
 
     formData.images.forEach((file) => {
@@ -280,7 +236,6 @@ export default function AddInventoryPage() {
                   placeholder="Ej. Tractor John Deere 5075E"
                   value={formData.nombreMaquinaria}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 
@@ -293,7 +248,6 @@ export default function AddInventoryPage() {
                   placeholder="Ej. CONT-987654"
                   value={formData.numeroContenedor}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 
@@ -316,7 +270,6 @@ export default function AddInventoryPage() {
                     value={formData.fechaCompra}
                     onChange={handleInputChange}
                     onClick={handleOpenPicker}
-                    required
                     style={{
                       width: "100%",
                       paddingRight: "40px",
@@ -392,7 +345,6 @@ export default function AddInventoryPage() {
                   placeholder="0.00"
                   value={formData.costoMaquinaria}
                   onChange={handleNumberInputChange}
-                  required
                 />
               </div>
 

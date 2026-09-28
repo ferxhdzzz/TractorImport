@@ -49,9 +49,7 @@ function Sidebar() {
           <NavLink to="/dashboard" className="nav-link">
             <FaCompass className="icon" /> <span>Menu</span>
           </NavLink>
-          <NavLink to="/AddProduct" className="nav-link">
-            <FaPlusCircle className="icon" /> <span>Agregar Maquinaria</span>
-          </NavLink>
+           
           <NavLink to="/productPriv" className="nav-link">
             <FaBox className="icon" /> <span>Maquinarias</span>
           </NavLink>
@@ -68,6 +66,10 @@ function Sidebar() {
             <FaTags className="icon" /> <span>Terrenos</span>
           </NavLink>
 
+          <NavLink to="/Articulos" className="nav-link">
+            <FaPlusCircle className="icon" /> <span>Articulos Varios</span>
+          </NavLink>
+        
           <NavLink to="/ajustes" className="nav-link">
             <FaCog className="icon" /> <span>Ajustes</span>
           </NavLink>

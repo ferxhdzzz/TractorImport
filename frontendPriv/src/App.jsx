@@ -14,6 +14,8 @@ import Gastos from './pages/Gastos';
 import Lands from './pages/Lands';
 import ProductPriv from './pages/Products-Private';
 import AddProduct from './pages/AgregarProducto';
+import ArticulosVarios from './pages/Articulos';
+import Calculadora from './pages/Calculadora';
 // Componente para proteger rutas
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -91,6 +93,24 @@ function App() {
           element={
             <ProtectedRoute>
               <Lands />
+            </ProtectedRoute>
+          }
+        />
+
+         <Route
+          path="/Articulos"
+          element={
+            <ProtectedRoute>
+              <ArticulosVarios />
+            </ProtectedRoute>
+          }
+        />
+
+         <Route
+          path="/Calculadora"
+          element={
+            <ProtectedRoute>
+              <Calculadora />
             </ProtectedRoute>
           }
         />

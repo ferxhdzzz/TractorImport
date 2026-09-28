@@ -183,7 +183,7 @@ const ProfileCard = () => {
             <Label text="Acerca del administrador" />
             <p className="admin-description">
               El administrador es el usuario responsable de gestionar y supervisar el funcionamiento completo del 
-              sitio web de Eternal Joyería. Tiene acceso exclusivo a las funciones internas de la plataforma.
+              sitio web de Tractor Import. Tiene acceso exclusivo a las funciones internas de la plataforma.
             </p>
           </div>
         </div>

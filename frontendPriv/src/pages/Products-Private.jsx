@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import Titulo from "../components/Componte-hook/Titulos";
 import SubTitulo from "../components/Componte-hook/SubTitulo";
@@ -12,6 +13,7 @@ import { useDataProduct } from "../hooks/Unified/UseDataProduct";
 import "../styles/PaginaProduct.css";
 
 const Products = () => {
+  const navigate = useNavigate();
   const { products: inventory, deleteProduct: deleteInventory, fetchProducts: fetchInventory } = useDataProduct();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -145,15 +147,51 @@ const Products = () => {
             <SubTitulo>Administra la maquinaria y tractores importados</SubTitulo>
           </div>
 
-          {/* Barra de búsqueda */}
-          <div className="product-search-wrapper">
-            <input
-              type="text"
-              className="product-search-input"
-              placeholder="Buscar por maquinaria o # contenedor..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          {/* Barra de acciones: Botón Agregar Maquinaria y Búsqueda */}
+          <div
+            className="product-top-actions"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "16px",
+              marginBottom: "20px",
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => navigate("/AddProduct")}
+              style={{
+                backgroundColor: "#1C4024",
+                color: "#ffffff",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                fontSize: "0.95rem",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 2px 6px rgba(28, 64, 36, 0.2)",
+                transition: "background-color 0.2s ease, transform 0.1s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#2d5e38")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#1C4024")}
+            >
+              <span style={{ fontSize: "1.2rem", lineHeight: 0 }}>+</span> Agregar Maquinaria
+            </button>
+
+            <div className="product-search-wrapper" style={{ flex: 1, minWidth: "260px" }}>
+              <input
+                type="text"
+                className="product-search-input"
+                placeholder="Buscar por maquinaria o # contenedor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Lista de Maquinaria */}
@@ -172,7 +210,6 @@ const Products = () => {
                     })
                   : "No especificada";
 
-                // Tomar el valor de precioFinal o price por compatibilidad
                 const valorPrecioFinal = item.precioFinal ?? item.price ?? 0;
 
                 return (
