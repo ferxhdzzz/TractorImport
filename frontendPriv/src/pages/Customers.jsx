@@ -64,7 +64,7 @@ const Customers = () => {
       text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#be185d",
+      confirmButtonColor: "#12390a",
       cancelButtonColor: "#aaa",
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
@@ -77,7 +77,7 @@ const Customers = () => {
           icon: "success",
           title: "Cliente eliminado",
           text: "El registro fue eliminado correctamente del sistema.",
-          confirmButtonColor: "#be185d",
+          confirmButtonColor: "#12390a",
           timer: 1500,
           showConfirmButton: false,
         });
@@ -86,7 +86,7 @@ const Customers = () => {
           icon: "error",
           title: "Error",
           text: error.message || "No se pudo eliminar el cliente.",
-          confirmButtonColor: "#be185d",
+          confirmButtonColor: "#12390a",
         });
       }
     }

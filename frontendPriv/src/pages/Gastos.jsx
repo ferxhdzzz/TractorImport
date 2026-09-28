@@ -55,7 +55,7 @@ const Gastos = () => {
       text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#be185d",
+      confirmButtonColor: "#12390a",
       cancelButtonColor: "#aaa",
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
@@ -68,7 +68,7 @@ const Gastos = () => {
           icon: "success",
           title: "Gasto eliminado",
           text: "El registro fue eliminado correctamente.",
-          confirmButtonColor: "#be185d",
+          confirmButtonColor: "#12390a",
           timer: 1500,
           showConfirmButton: false,
         });
@@ -78,7 +78,7 @@ const Gastos = () => {
           icon: "error",
           title: "Error",
           text: "No se pudo eliminar el gasto.",
-          confirmButtonColor: "#be185d",
+          confirmButtonColor: "#12390a",
         });
       }
     }

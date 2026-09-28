@@ -286,7 +286,7 @@ const Products = () => {
                       </Button>
                       <Button
                         onClick={() => handleDelete(item._id, item.nombreMaquinaria)}
-                        style={{ backgroundColor: "#dc3545", color: "#ffffff", borderRadius: "6px" }}
+                        style={{ backgroundColor: "#4C8F3F", color: "#ffffff", borderRadius: "6px" }}
                       >
                         Eliminar
                       </Button>

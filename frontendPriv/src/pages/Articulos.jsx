@@ -60,7 +60,7 @@ const ArticulosVarios = () => {
       text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#be185d",
+      confirmButtonColor: "#12390a",
       cancelButtonColor: "#aaa",
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
@@ -73,7 +73,7 @@ const ArticulosVarios = () => {
           icon: "success",
           title: "Artículo eliminado",
           text: "El registro fue eliminado correctamente.",
-          confirmButtonColor: "#be185d",
+          confirmButtonColor: "#12390a",
           timer: 1500,
           showConfirmButton: false,
         });
@@ -83,7 +83,7 @@ const ArticulosVarios = () => {
           icon: "error",
           title: "Error",
           text: "No se pudo eliminar el artículo.",
-          confirmButtonColor: "#be185d",
+          confirmButtonColor: "#12390a",
         });
       }
     }

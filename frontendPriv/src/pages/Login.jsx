@@ -473,12 +473,12 @@ export default function Login() {
           }
 
           .pink-input.error {
-            border-color: #f87171;
+            border-color: #12390a;
             background: linear-gradient(145deg, rgba(60, 30, 30, 0.9), rgba(70, 35, 35, 0.8));
           }
 
           .pink-error-message {
-            color: #f87171;
+            color: #12390a;
           }
         }
       `}</style>

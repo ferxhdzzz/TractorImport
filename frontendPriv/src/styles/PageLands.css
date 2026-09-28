@@ -61,13 +61,13 @@
   cursor: pointer;
   font-size: 0.95rem;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(190, 24, 93, 0.2);
+  box-shadow: 0 4px 12px rgba(24, 190, 82, 0.3);
 }
 
 .land-add-btn:hover {
   background-color: #0d330a;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(190, 24, 93, 0.3);
+  box-shadow: 0 6px 16px rgba(24, 190, 82, 0.3);
 }
 
 .land-search-wrapper {
@@ -102,7 +102,7 @@
 
 .land-search-input:focus {
   background-color: #ffffff;
-  border-color: #be185d;
+  border-color: #18be1d;
   box-shadow: 0 0 0 3px rgba(190, 24, 93, 0.12);
 }
 
@@ -129,14 +129,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #fce3ec;
+  border-bottom: 2px solid #e3fce7;
   padding-bottom: 0.8rem;
 }
 
 .product-title {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #be185d;
+  color: #18be1d;
   margin: 0;
 }
 
@@ -194,7 +194,7 @@
   padding-top: 0.6rem;
   margin-top: 0.4rem;
   font-size: 1.1rem;
-  color: #be185d;
+  color: #095014;
   font-weight: bold;
 }
 
@@ -205,7 +205,7 @@
   background-color: #fff5f8;
   padding: 0.6rem 1rem;
   border-radius: 6px;
-  border-left: 3px solid #be185d;
+  border-left: 3px solid #095014;
   font-size: 0.9rem;
 }
 

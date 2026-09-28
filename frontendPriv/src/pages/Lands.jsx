@@ -56,7 +56,7 @@ const Lands = () => {
       text: "Esta acción no se puede deshacer.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#be185d",
+      confirmButtonColor: "#12390a",
       cancelButtonColor: "#aaa",
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
