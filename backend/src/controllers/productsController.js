@@ -150,7 +150,7 @@ inventoryController.createInventory = async (req, res) => {
 
 
 // =====================================================
-// ACTUALIZAR INVENTARIO
+// ACTUALIZAR INVENTARIO (UNA SOLA IMAGEN DIRECTA)
 // =====================================================
 inventoryController.updateInventory = async (req, res) => {
   const { id } = req.params;
@@ -196,34 +196,20 @@ inventoryController.updateInventory = async (req, res) => {
       item.observaciones = updates.observaciones.trim();
     }
 
-    // PROCESAMIENTO DE IMÁGENES
-    let finalImages = [];
+    // PROCESAMIENTO DE UNA SOLA IMAGEN
+    let singleFile = req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
 
-    // 1. Obtener la lista de imágenes existentes que el frontend explícitamente aprueba mantener
-    if (updates.existingImages !== undefined) {
-      try {
-        finalImages = typeof updates.existingImages === "string"
-          ? JSON.parse(updates.existingImages)
-          : updates.existingImages;
-      } catch (e) {
-        finalImages = [];
-      }
+    if (singleFile) {
+      // 1. Si subió una foto física nueva, la subimos a Cloudinary
+      const newUrl = await uploadImageToCloudinary(singleFile);
+      item.imagenUrl = newUrl || "";
+      item.images = newUrl ? [newUrl] : [];
+    } else if (updates.imagenUrl !== undefined) {
+      // 2. Si envió una URL existente o cadena vacía "" (cuando borra la foto)
+      const currentUrl = String(updates.imagenUrl).trim();
+      item.imagenUrl = currentUrl;
+      item.images = currentUrl ? [currentUrl] : [];
     }
-
-    // 2. Si hay un archivo subido en 'images' (múltiple) o 'file' (individual), subirlo a Cloudinary
-    if (req.files && req.files.length > 0) {
-      const newUploads = await Promise.all(
-        req.files.map((file) => uploadImageToCloudinary(file))
-      );
-      finalImages = [...finalImages, ...newUploads.filter(Boolean)];
-    } else if (req.file) {
-      const singleUrl = await uploadImageToCloudinary(req.file);
-      if (singleUrl) finalImages.push(singleUrl);
-    }
-
-    // 3. Asignar las imágenes actualizadas directamente a MongoDB
-    item.images = Array.isArray(finalImages) ? finalImages : [];
-    item.imagenUrl = finalImages.length > 0 ? finalImages[0] : "";
 
     const updatedInventory = await item.save();
 

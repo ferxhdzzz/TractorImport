@@ -18,7 +18,7 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     observaciones: "",
   });
 
-  // Manejo de UNA sola imagen en edición
+  // Estado para UNA sola imagen
   const [previewImage, setPreviewImage] = useState(null);
 
   const handleOpenPicker = () => {
@@ -87,14 +87,13 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
           observaciones: data.observaciones || "",
         });
 
-        // Configurar la imagen (toma la primera de images o imagenUrl)
-        const singleImgSrc =
-          Array.isArray(data.images) && data.images.length > 0
-            ? data.images[0]
-            : data.imagenUrl || null;
+        // Cargar imagen única
+        const imgSrc = data.imagenUrl || (Array.isArray(data.images) && data.images.length > 0 ? data.images[0] : null);
 
-        if (singleImgSrc) {
-          setPreviewImage({ url: singleImgSrc, isNew: false });
+        if (imgSrc) {
+          setPreviewImage({ url: imgSrc, isNew: false });
+        } else {
+          setPreviewImage(null);
         }
       } catch (err) {
         console.error(err);
@@ -143,7 +142,7 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     }));
   };
 
-  // Click sobre la imagen existente (o área vacía) para reemplazar/subir
+  // Seleccionar o reemplazar la imagen única
   const handleImageClick = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -152,7 +151,7 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     input.onchange = (e) => {
       const file = e.target.files[0];
       if (file) {
-        if (previewImage && previewImage.isNew) {
+        if (previewImage && previewImage.isNew && previewImage.url) {
           URL.revokeObjectURL(previewImage.url);
         }
         const newUrl = URL.createObjectURL(file);
@@ -163,9 +162,11 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     input.click();
   };
 
+  // Eliminar la imagen única
   const handleDeleteImage = () => {
     Swal.fire({
       title: "¿Eliminar esta imagen?",
+      text: "La imagen se eliminará definitivamente cuando guardes los cambios.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#be185d",
@@ -174,7 +175,7 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
       cancelButtonText: "Cancelar",
     }).then((result) => {
       if (result.isConfirmed) {
-        if (previewImage && previewImage.isNew) {
+        if (previewImage && previewImage.isNew && previewImage.url) {
           URL.revokeObjectURL(previewImage.url);
         }
         setPreviewImage(null);
@@ -182,81 +183,83 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
     });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const form = new FormData();
+    try {
+      const form = new FormData();
 
-    form.append("nombreMaquinaria", formData.nombreMaquinaria.trim());
-    form.append("numeroContenedor", formData.numeroContenedor.trim());
-    
-    if (formData.fechaCompra) {
-      form.append("fechaCompra", formatLocalDate(formData.fechaCompra));
-    } else {
-      form.append("fechaCompra", "");
-    }
+      form.append("nombreMaquinaria", formData.nombreMaquinaria.trim());
+      form.append("numeroContenedor", formData.numeroContenedor.trim());
 
-    form.append("descripcion", formData.descripcion.trim());
-    form.append("observaciones", formData.observaciones.trim());
-
-    form.append("costoMaquinaria", convertToNumber(formData.costoMaquinaria));
-    form.append("impuestoPagado", convertToNumber(formData.impuestoPagado));
-    form.append("costoTransporte", convertToNumber(formData.costoTransporte));
-    form.append("precioFinal", convertToNumber(formData.precioFinal));
-
-    // MANEJO ESTRICTO DE IMAGEN ÚNICA
-    if (!previewImage) {
-      // 1. Si el usuario borró la imagen: enviamos un array vacío explícito
-      form.append("existingImages", JSON.stringify([]));
-    } else if (!previewImage.isNew) {
-      // 2. Si conserva la imagen existente: enviamos su URL
-      form.append("existingImages", JSON.stringify([previewImage.url]));
-    } else {
-      // 3. Si la reemplazó por una nueva foto local: no hay imágenes previas, adjuntamos el archivo nuevo
-      form.append("existingImages", JSON.stringify([]));
-      form.append("images", previewImage.file); // Adjuntamos el archivo binario
-    }
-
-    const res = await fetch(
-      `https://tractorimport.onrender.com/api/products/${productId}`,
-      {
-        method: "PUT",
-        credentials: "include",
-        body: form,
+      if (formData.fechaCompra) {
+        form.append("fechaCompra", formatLocalDate(formData.fechaCompra));
+      } else {
+        form.append("fechaCompra", "");
       }
-    );
 
-    const resJson = await res.json();
+      form.append("descripcion", formData.descripcion.trim());
+      form.append("observaciones", formData.observaciones.trim());
 
-    if (!res.ok) throw new Error(resJson.message || "Error al actualizar");
+      form.append("costoMaquinaria", convertToNumber(formData.costoMaquinaria));
+      form.append("impuestoPagado", convertToNumber(formData.impuestoPagado));
+      form.append("costoTransporte", convertToNumber(formData.costoTransporte));
+      form.append("precioFinal", convertToNumber(formData.precioFinal));
 
-    // Actualizamos el inventario en el estado padre (Products.jsx)
-    if (typeof refreshProducts === "function") {
-      await refreshProducts();
+      // MANEJO DIRECTO DE UNA SOLA IMAGEN
+      if (!previewImage) {
+        // Si el usuario eliminó la imagen
+        form.append("imagenUrl", "");
+      } else if (!previewImage.isNew) {
+        // Si se mantiene la imagen previa
+        form.append("imagenUrl", previewImage.url);
+      } else {
+        // Si se subió una nueva foto local
+        form.append("imagenUrl", "");
+        form.append("image", previewImage.file);
+        form.append("file", previewImage.file);
+        form.append("images", previewImage.file);
+      }
+
+      const res = await fetch(
+        `https://tractorimport.onrender.com/api/products/${productId}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          body: form,
+        }
+      );
+
+      const resJson = await res.json();
+
+      if (!res.ok) throw new Error(resJson.message || "Error al actualizar la maquinaria");
+
+      if (typeof refreshProducts === "function") {
+        await refreshProducts();
+      }
+
+      setLoading(false);
+
+      await Swal.fire({
+        icon: "success",
+        title: "Maquinaria actualizada",
+        text: "Los datos de la maquinaria fueron guardados correctamente.",
+        confirmButtonColor: "#be185d",
+      });
+
+      onClose();
+    } catch (err) {
+      setLoading(false);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message,
+        confirmButtonColor: "#be185d",
+      });
     }
+  };
 
-    setLoading(false);
-
-    await Swal.fire({
-      icon: "success",
-      title: "Maquinaria actualizada",
-      text: "Los datos de la maquinaria fueron guardados correctamente.",
-      confirmButtonColor: "#be185d",
-    });
-
-    onClose();
-  } catch (err) {
-    setLoading(false);
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: err.message,
-      confirmButtonColor: "#be185d",
-    });
-  }
-};
   return (
     <div className="land-modal-overlay" onClick={onClose}>
       <div className="land-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -415,13 +418,14 @@ const handleSubmit = async (e) => {
 
             <div className="land-field-group full-width">
               <label>Imagen de Maquinaria</label>
-              
-              <div 
-                className="edit-image-preview" 
-                style={{ 
-                  display: "flex", 
-                  justifyContent: "flex-start", 
-                  gap: "10px" 
+
+              <div
+                className="edit-image-preview"
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  gap: "10px",
+                  marginTop: "8px",
                 }}
               >
                 {previewImage ? (
@@ -431,13 +435,14 @@ const handleSubmit = async (e) => {
                       alt="preview"
                       className="editable-img"
                       onClick={handleImageClick}
-                      title="Click para reemplazar"
-                      style={{ 
-                        cursor: "pointer", 
-                        width: "150px", 
-                        height: "150px", 
-                        objectFit: "cover", 
-                        borderRadius: "8px" 
+                      title="Haz clic para reemplazar la imagen"
+                      style={{
+                        cursor: "pointer",
+                        width: "150px",
+                        height: "150px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid #cbd5e1",
                       }}
                     />
                     <button
@@ -447,23 +452,24 @@ const handleSubmit = async (e) => {
                       aria-label="Eliminar imagen"
                       style={{
                         position: "absolute",
-                        top: "5px",
-                        right: "5px",
+                        top: "6px",
+                        right: "6px",
                         background: "rgba(220, 53, 69, 0.9)",
                         color: "white",
                         border: "none",
                         borderRadius: "50%",
-                        width: "24px",
-                        height: "24px",
+                        width: "26px",
+                        height: "26px",
                         cursor: "pointer",
-                        fontWeight: "bold"
+                        fontWeight: "bold",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
                       }}
                     >
                       ×
                     </button>
                   </div>
                 ) : (
-                  <div 
+                  <div
                     onClick={handleImageClick}
                     style={{
                       width: "150px",
@@ -476,7 +482,7 @@ const handleSubmit = async (e) => {
                       justifyContent: "center",
                       cursor: "pointer",
                       color: "#1C4024",
-                      backgroundColor: "#f9fafb"
+                      backgroundColor: "#f9fafb",
                     }}
                   >
                     <span style={{ fontSize: "2rem", lineHeight: "1" }}>+</span>
