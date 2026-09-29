@@ -4,11 +4,11 @@ import inventoryController from "../controllers/productsController.js";
 
 const router = express.Router();
 
-// Configura multer para subir imágenes a la carpeta temporal public/
 const upload = multer({ dest: "public/" });
 
-router.post("/", upload.array("images"), inventoryController.createInventory);
-router.put("/:id", upload.array("images"), inventoryController.updateInventory);
+// Cambiamos a upload.single("image")
+router.post("/", upload.single("image"), inventoryController.createInventory);
+router.put("/:id", upload.single("image"), inventoryController.updateInventory);
 
 router.get("/", inventoryController.getInventory);
 router.get("/:id", inventoryController.getInventoryById);

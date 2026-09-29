@@ -207,18 +207,19 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
       form.append("costoTransporte", convertToNumber(formData.costoTransporte));
       form.append("precioFinal", convertToNumber(formData.precioFinal));
 
-  if (!previewImage) {
-  // 1. Si se eliminó la imagen en el modal
+ // Dentro de handleSubmit en EditProduct.jsx
+
+if (!previewImage) {
+  // 1. SI SE ELIMINÓ LA IMAGEN EN EL MODAL:
   form.append("imagenUrl", "");
 } else if (!previewImage.isNew) {
-  // 2. Si mantiene la imagen previa existente
+  // 2. SI CONSERVA LA IMAGEN PREVIA:
   form.append("imagenUrl", previewImage.url);
 } else {
-  // 3. Si subió una foto nueva desde su dispositivo
+  // 3. SI SUBIÓ UNA FOTO NUEVA DESDE EL DISPOSITIVO:
   form.append("imagenUrl", "");
-  form.append("image", previewImage.file); // Un solo campo para Multer
+  form.append("image", previewImage.file); // Coincide exactamente con upload.single("image")
 }
-
       const res = await fetch(
         `https://tractorimport.onrender.com/api/products/${productId}`,
         {

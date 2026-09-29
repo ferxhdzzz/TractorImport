@@ -166,63 +166,35 @@ inventoryController.updateInventory = async (req, res) => {
     }
 
     // 1. CAMPOS NUMÉRICOS
-    if (updates.costoMaquinaria !== undefined) {
-      item.costoMaquinaria = Number(updates.costoMaquinaria) || 0;
-    }
-    if (updates.impuestoPagado !== undefined) {
-      item.impuestoPagado = Number(updates.impuestoPagado) || 0;
-    }
-    if (updates.costoTransporte !== undefined) {
-      item.costoTransporte = Number(updates.costoTransporte) || 0;
-    }
-    if (updates.precioFinal !== undefined) {
-      item.precioFinal = Number(updates.precioFinal) || 0;
-    }
+    if (updates.costoMaquinaria !== undefined) item.costoMaquinaria = Number(updates.costoMaquinaria) || 0;
+    if (updates.impuestoPagado !== undefined) item.impuestoPagado = Number(updates.impuestoPagado) || 0;
+    if (updates.costoTransporte !== undefined) item.costoTransporte = Number(updates.costoTransporte) || 0;
+    if (updates.precioFinal !== undefined) item.precioFinal = Number(updates.precioFinal) || 0;
 
     // 2. CAMPOS DE TEXTO Y FECHA
-    if (updates.nombreMaquinaria !== undefined) {
-      item.nombreMaquinaria = updates.nombreMaquinaria.trim();
-    }
-    if (updates.numeroContenedor !== undefined) {
-      item.numeroContenedor = updates.numeroContenedor.trim();
-    }
-    if (updates.fechaCompra !== undefined) {
-      item.fechaCompra = updates.fechaCompra || null;
-    }
-    if (updates.descripcion !== undefined) {
-      item.descripcion = updates.descripcion.trim();
-    }
-    if (updates.observaciones !== undefined) {
-      item.observaciones = updates.observaciones.trim();
+    if (updates.nombreMaquinaria !== undefined) item.nombreMaquinaria = updates.nombreMaquinaria.trim();
+    if (updates.numeroContenedor !== undefined) item.numeroContenedor = updates.numeroContenedor.trim();
+    if (updates.fechaCompra !== undefined) item.fechaCompra = updates.fechaCompra || null;
+    if (updates.descripcion !== undefined) item.descripcion = updates.descripcion.trim();
+    if (updates.observaciones !== undefined) item.observaciones = updates.observaciones.trim();
+
+    // 3. ARCHIVO SUBIDO POR MULTER (req.file)
+    const uploadedFile = req.file;
+
+    // 4. LÓGICA DE IMAGEN ÚNICA
+    if (uploadedFile) {
+      // Subir archivo nuevo a Cloudinary
+      const uploadedUrl = await uploadImageToCloudinary(uploadedFile);
+      if (uploadedUrl) {
+        item.imagenUrl = uploadedUrl;
+      }
+    } else if (updates.imagenUrl !== undefined) {
+      // Mantiene la URL existente o la limpia si viene ""
+      item.imagenUrl = String(updates.imagenUrl).trim();
     }
 
-   let uploadedFile = req.file;
-if (!uploadedFile && req.files) {
-  if (Array.isArray(req.files) && req.files.length > 0) {
-    uploadedFile = req.files[0];
-  } else if (typeof req.files === "object") {
-    const keys = Object.keys(req.files);
-    if (keys.length > 0 && Array.isArray(req.files[keys[0]]) && req.files[keys[0]].length > 0) {
-      uploadedFile = req.files[keys[0]][0];
-    }
-  }
-}
-
-// 4. LÓGICA DE IMAGEN ÚNICA (Solo imagenUrl)
-if (uploadedFile) {
-  // Caso A: Se subió un archivo físico -> Subir a Cloudinary
-  const uploadedUrl = await uploadImageToCloudinary(uploadedFile);
-  if (uploadedUrl) {
-    item.imagenUrl = uploadedUrl;
-    item.images = undefined; // Opcional: limpia la propiedad si existía en Mongo
-  }
-} else if (updates.imagenUrl !== undefined) {
-  // Caso B: Se envió 'imagenUrl' desde req.body
-  // Si la borraste en el modal llegará "" -> guarda ""
-  // Si mantienes la previa llegará "https://..." -> guarda la URL
-  item.imagenUrl = String(updates.imagenUrl).trim();
-  item.images = undefined;
-}
+    // ELIMINAR EL ARRAY OBSOLETO 'images' EN MONGO DB
+    item.set("images", undefined);
 
     const updatedInventory = await item.save();
 
@@ -236,7 +208,6 @@ if (uploadedFile) {
     });
   }
 };
-
 // =====================================================
 // ELIMINAR INVENTARIO
 // =====================================================

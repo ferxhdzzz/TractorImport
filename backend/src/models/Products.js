@@ -18,7 +18,7 @@ const productSchema = new Schema(
     imagenUrl: { type: String, default: "" },
     status: { type: String, default: "disponible" }
   },
-  { timestamps: true, strict: false }
+  { timestamps: true } // Quitamos strict: false
 );
 
-export default model("Product", productSchema); // El nombre es "Product"
+export default model("Product", productSchema);
