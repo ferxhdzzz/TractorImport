@@ -16,7 +16,7 @@ customerController.getCustomers = async (req, res) => {
   }
 };
 
-// Obtener un cliente por su ID (Necesario para el modal de edición)
+// Obtener un cliente por su ID
 customerController.getCustomerById = async (req, res) => {
   try {
     const customer = await Customer.findById(req.params.id).populate("maquinariaComprada");
@@ -34,11 +34,11 @@ customerController.getCustomerById = async (req, res) => {
   }
 };
 
-// Registrar un nuevo cliente / abono
+// Registrar un nuevo cliente / compra múltiple
 customerController.createCustomer = async (req, res) => {
   const {
     nombreCliente,
-    maquinariaComprada,
+    maquinariaComprada, // Puede ser un ID único o un Arreglo de IDs ["id1", "id2", "id3"]
     precioFinal,
     fechaCompra,
     aplicaAbono,
@@ -56,17 +56,31 @@ customerController.createCustomer = async (req, res) => {
       });
     }
 
-    // Verificar existencia de maquinaria
-    const productoExiste = await Products.findById(maquinariaComprada);
-    if (!productoExiste) {
+    // Normalizar a Arreglo en caso de que envíen un solo ID o un array
+    const listaMaquinaria = Array.isArray(maquinariaComprada)
+      ? maquinariaComprada
+      : [maquinariaComprada];
+
+    if (listaMaquinaria.length === 0) {
+      return res.status(400).json({
+        message: "Debe seleccionar al menos una maquinaria.",
+      });
+    }
+
+    // Verificar existencia de cada maquinaria en Products
+    const productosEncontrados = await Products.find({
+      _id: { $in: listaMaquinaria },
+    });
+
+    if (productosEncontrados.length !== listaMaquinaria.length) {
       return res.status(404).json({
-        message: "La maquinaria seleccionada no existe en el inventario.",
+        message: "Una o más maquinarias seleccionadas no existen en el inventario.",
       });
     }
 
     const newCustomer = new Customer({
       nombreCliente: nombreCliente.trim(),
-      maquinariaComprada,
+      maquinariaComprada: listaMaquinaria, // Guardamos la lista completa
       precioFinal: Number(precioFinal),
       fechaCompra,
       aplicaAbono: Boolean(aplicaAbono),
@@ -79,7 +93,7 @@ customerController.createCustomer = async (req, res) => {
 
     const savedCustomer = await newCustomer.save();
 
-    // Poblado directo sobre la instancia guardada
+    // Poblado directo sobre la lista
     await savedCustomer.populate("maquinariaComprada");
 
     res.status(201).json(savedCustomer);
@@ -104,12 +118,21 @@ customerController.updateCustomer = async (req, res) => {
     }
 
     if (updates.maquinariaComprada) {
-      const productoExiste = await Products.findById(updates.maquinariaComprada);
-      if (!productoExiste) {
+      const listaMaquinaria = Array.isArray(updates.maquinariaComprada)
+        ? updates.maquinariaComprada
+        : [updates.maquinariaComprada];
+
+      const productosEncontrados = await Products.find({
+        _id: { $in: listaMaquinaria },
+      });
+
+      if (productosEncontrados.length !== listaMaquinaria.length) {
         return res.status(404).json({
-          message: "La maquinaria seleccionada no existe.",
+          message: "Una o más maquinarias seleccionadas no existen.",
         });
       }
+
+      updates.maquinariaComprada = listaMaquinaria;
     }
 
     Object.keys(updates).forEach((key) => {

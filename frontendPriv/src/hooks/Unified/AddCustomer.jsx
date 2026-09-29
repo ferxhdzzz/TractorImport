@@ -7,13 +7,13 @@ const AddCustomerModal = ({ onClose, refreshCustomers }) => {
   const [loading, setLoading] = useState(false);
   const [machineryList, setMachineryList] = useState([]);
 
-  // Referencias para abrir el selector de fechas al hacer clic en el input o en el ícono
+  // Referencias para abrir el selector de fechas
   const fechaCompraRef = useRef(null);
   const fechaAbonoRef = useRef(null);
 
   const [formData, setFormData] = useState({
     nombreCliente: "",
-    maquinariaComprada: "",
+    maquinariaComprada: [], // Ahora es un Arreglo de IDs seleccionadas
     precioFinal: "",
     fechaCompra: new Date().toISOString().split("T")[0],
     aplicaAbono: false,
@@ -39,7 +39,7 @@ const AddCustomerModal = ({ onClose, refreshCustomers }) => {
     return Number(String(value).replace(/,/g, "")) || 0;
   };
 
-  // Formatear números con comas para la vista (Ej: 13500 -> "13,500")
+  // Formatear números con comas para la vista (Ej: 13500 -> "13,500.00")
   const formatNumberWithCommas = (val) => {
     if (val === undefined || val === null || val === "") return "";
     const clean = String(val).replace(/,/g, "");
@@ -132,36 +132,52 @@ const AddCustomerModal = ({ onClose, refreshCustomers }) => {
     });
   };
 
-  // Selección de Maquinaria y Autocompletado opcional del precio
-  const handleMachineryChange = (e) => {
-    const selectedId = e.target.value;
-    const selectedItem = machineryList.find((item) => item._id === selectedId);
-
-    let formattedPrice = "";
-    if (selectedItem) {
-      const priceVal = selectedItem.precioFinal || selectedItem.price || "";
-      if (priceVal) {
-        formattedPrice = formatNumberWithCommas(priceVal);
+  // Recalcular la suma total del precio final basado en las maquinarias seleccionadas
+  const recalculateTotalPrice = (selectedIds) => {
+    let totalSum = 0;
+    selectedIds.forEach((id) => {
+      const found = machineryList.find((item) => item._id === id);
+      if (found) {
+        const val = found.precioFinal ?? found.price ?? 0;
+        totalSum += Number(val) || 0;
       }
-    }
+    });
 
+    const formattedPrice = totalSum > 0 ? formatNumberWithCommas(totalSum) : "";
+    
     setFormData((prev) => {
       const updated = {
         ...prev,
-        maquinariaComprada: selectedId,
+        maquinariaComprada: selectedIds,
+        precioFinal: formattedPrice,
       };
 
-      if (formattedPrice) {
-        updated.precioFinal = formattedPrice;
-        if (prev.aplicaAbono) {
-          const ab = convertToNumber(prev.abonoPagado);
-          const pf = convertToNumber(formattedPrice);
-          updated.remanente = formatNumberWithCommas(Math.max(0, pf - ab));
-        }
+      if (prev.aplicaAbono) {
+        const ab = convertToNumber(prev.abonoPagado);
+        updated.remanente = formatNumberWithCommas(Math.max(0, totalSum - ab));
       }
 
       return updated;
     });
+  };
+
+  // Agregar maquinaria a la lista seleccionada
+  const handleAddMachinery = (e) => {
+    const selectedId = e.target.value;
+    if (!selectedId) return;
+
+    if (!formData.maquinariaComprada.includes(selectedId)) {
+      const updatedList = [...formData.maquinariaComprada, selectedId];
+      recalculateTotalPrice(updatedList);
+    }
+
+    e.target.value = ""; // Reiniciar select
+  };
+
+  // Remover maquinaria de la lista seleccionada
+  const handleRemoveMachinery = (idToRemove) => {
+    const updatedList = formData.maquinariaComprada.filter((id) => id !== idToRemove);
+    recalculateTotalPrice(updatedList);
   };
 
   // ==============================
@@ -169,11 +185,22 @@ const AddCustomerModal = ({ onClose, refreshCustomers }) => {
   // ==============================
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (formData.maquinariaComprada.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Selección requerida",
+        text: "Debe seleccionar al menos una maquinaria para el cliente.",
+        confirmButtonColor: "#be185d",
+      });
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
       nombreCliente: formData.nombreCliente.trim(),
-      maquinariaComprada: formData.maquinariaComprada,
+      maquinariaComprada: formData.maquinariaComprada, // Enviamos el arreglo con los IDs
       precioFinal: convertToNumber(formData.precioFinal),
       fechaCompra: formatLocalDate(formData.fechaCompra),
       aplicaAbono: formData.aplicaAbono,
@@ -253,23 +280,81 @@ const AddCustomerModal = ({ onClose, refreshCustomers }) => {
               />
             </div>
 
-            {/* Maquinaria Comprada */}
-            <div className="land-field-group">
-              <label>Maquinaria Comprada *</label>
+            {/* Selección Múltiple de Maquinaria Comprada */}
+            <div className="land-field-group full-width">
+              <label>Maquinaria(s) Comprada(s) *</label>
+              
+              {/* Select para añadir maquina */}
               <select
-                name="maquinariaComprada"
-                value={formData.maquinariaComprada}
-                onChange={handleMachineryChange}
-                required
+                onChange={handleAddMachinery}
                 className="land-input-field"
+                defaultValue=""
               >
-                <option value="">Selecciona Maquinaria del Inventario</option>
+                <option value="" disabled>
+                  + Haz clic para seleccionar maquinaria del inventario
+                </option>
                 {machineryList.map((item) => (
                   <option key={item._id} value={item._id}>
                     {item.nombreMaquinaria || item.name} {item.numeroContenedor ? `(Cont: ${item.numeroContenedor})` : ""}
                   </option>
                 ))}
               </select>
+
+              {/* Badges de Maquinarias Seleccionadas */}
+              <div 
+                style={{ 
+                  display: "flex", 
+                  flexWrap: "wrap", 
+                  gap: "8px", 
+                  marginTop: "10px" 
+                }}
+              >
+                {formData.maquinariaComprada.map((id) => {
+                  const item = machineryList.find((m) => m._id === id);
+                  if (!item) return null;
+
+                  return (
+                    <span
+                      key={id}
+                      style={{
+                        backgroundColor: "#1C4024",
+                        color: "#ffffff",
+                        padding: "6px 12px",
+                        borderRadius: "20px",
+                        fontSize: "0.85rem",
+                        fontWeight: "600",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      {item.nombreMaquinaria || item.name}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMachinery(id)}
+                        style={{
+                          background: "#1C4024",
+                          border: "none",
+                          color: "#ffffff",
+                          borderRadius: "50%",
+                          width: "18px",
+                          height: "18px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          fontSize: "0.8rem",
+                          lineHeight: 1,
+                        }}
+                        title="Quitar maquinaria"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Fecha de Compra */}
@@ -319,9 +404,9 @@ const AddCustomerModal = ({ onClose, refreshCustomers }) => {
               </div>
             </div>
 
-            {/* Precio Final */}
+            {/* Precio Final (Suma automática o editable) */}
             <div className="land-field-group">
-              <label>Precio Final ($) *</label>
+              <label>Precio Final Total ($) *</label>
               <input
                 type="text"
                 inputMode="decimal"

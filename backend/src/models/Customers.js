@@ -7,11 +7,14 @@ const customerSchema = new Schema(
       required: [true, "El nombre del cliente es obligatorio"],
       trim: true,
     },
-    maquinariaComprada: {
-      type: Schema.Types.ObjectId,
-      ref: "Product", // O "Inventory" si tu modelo en Products.js exporta como "Inventory"
-      required: [true, "La maquinaria es obligatoria"],
-    },
+    // Se cambia de ObjectId único a Arreglo de ObjectIds ([Schema.Types.ObjectId])
+    maquinariaComprada: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Product", // Debe coincidir con el nombre asignado al modelo en Products.js
+        required: [true, "La maquinaria es obligatoria"],
+      },
+    ],
     precioFinal: {
       type: Number,
       required: [true, "El precio final es obligatorio"],
