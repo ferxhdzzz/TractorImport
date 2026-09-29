@@ -207,20 +207,22 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
       form.append("costoTransporte", convertToNumber(formData.costoTransporte));
       form.append("precioFinal", convertToNumber(formData.precioFinal));
 
-      // MANEJO DIRECTO DE UNA SOLA IMAGEN
       if (!previewImage) {
-        // Si el usuario eliminó la imagen
-        form.append("imagenUrl", "");
-      } else if (!previewImage.isNew) {
-        // Si se mantiene la imagen previa
-        form.append("imagenUrl", previewImage.url);
-      } else {
-        // Si se subió una nueva foto local
-        form.append("imagenUrl", "");
-        form.append("image", previewImage.file);
-        form.append("file", previewImage.file);
-        form.append("images", previewImage.file);
-      }
+  // 1. SI SE ELIMINÓ LA IMAGEN EN EL MODAL:
+  form.append("imagenUrl", "");
+  form.append("existingImages", JSON.stringify([]));
+} else if (!previewImage.isNew) {
+  // 2. SI MANTIENE LA IMAGEN PREVIA:
+  form.append("imagenUrl", previewImage.url);
+  form.append("existingImages", JSON.stringify([previewImage.url]));
+} else {
+  // 3. SI REEMPLAZÓ POR UNA FOTO NUEVA DESDE SU DISPOSITIVO:
+  form.append("imagenUrl", "");
+  form.append("existingImages", JSON.stringify([]));
+  form.append("image", previewImage.file);
+  form.append("images", previewImage.file);
+  form.append("file", previewImage.file);
+}
 
       const res = await fetch(
         `https://tractorimport.onrender.com/api/products/${productId}`,

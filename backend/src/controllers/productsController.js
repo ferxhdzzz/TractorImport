@@ -150,7 +150,7 @@ inventoryController.createInventory = async (req, res) => {
 
 
 // =====================================================
-// ACTUALIZAR INVENTARIO (UNA SOLA IMAGEN DIRECTA)
+// ACTUALIZAR INVENTARIO (REEMPLAZAR / ELIMINAR FOTO ÚNICA)
 // =====================================================
 inventoryController.updateInventory = async (req, res) => {
   const { id } = req.params;
@@ -165,7 +165,7 @@ inventoryController.updateInventory = async (req, res) => {
       });
     }
 
-    // CAMPOS NUMÉRICOS
+    // 1. CAMPOS NUMÉRICOS
     if (updates.costoMaquinaria !== undefined) {
       item.costoMaquinaria = Number(updates.costoMaquinaria) || 0;
     }
@@ -179,7 +179,7 @@ inventoryController.updateInventory = async (req, res) => {
       item.precioFinal = Number(updates.precioFinal) || 0;
     }
 
-    // CAMPOS DE TEXTO Y FECHA
+    // 2. CAMPOS DE TEXTO Y FECHA
     if (updates.nombreMaquinaria !== undefined) {
       item.nombreMaquinaria = updates.nombreMaquinaria.trim();
     }
@@ -196,28 +196,54 @@ inventoryController.updateInventory = async (req, res) => {
       item.observaciones = updates.observaciones.trim();
     }
 
-    // PROCESAMIENTO DE UNA SOLA IMAGEN
-    let singleFile = req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
+    // 3. CAPTURA DE ARCHIVO FÍSICO SUBIDO (Evita Error 500 en Multer)
+    let uploadedFile = req.file;
+    if (!uploadedFile && req.files) {
+      if (Array.isArray(req.files) && req.files.length > 0) {
+        uploadedFile = req.files[0];
+      } else if (typeof req.files === "object") {
+        const keys = Object.keys(req.files);
+        if (keys.length > 0 && Array.isArray(req.files[keys[0]]) && req.files[keys[0]].length > 0) {
+          uploadedFile = req.files[keys[0]][0];
+        }
+      }
+    }
 
-    if (singleFile) {
-      // 1. Si subió una foto física nueva, la subimos a Cloudinary
-      const newUrl = await uploadImageToCloudinary(singleFile);
-      item.imagenUrl = newUrl || "";
-      item.images = newUrl ? [newUrl] : [];
+    // 4. LÓGICA UNIFICADA DE IMAGEN (ACTUALIZAR AMBOS CAMPOS 'images' Y 'imagenUrl')
+    if (uploadedFile) {
+      // Caso A: Se envió una foto nueva física -> Subir a Cloudinary
+      const uploadedUrl = await uploadImageToCloudinary(uploadedFile);
+      if (uploadedUrl) {
+        item.imagenUrl = uploadedUrl;
+        item.images = [uploadedUrl];
+      }
     } else if (updates.imagenUrl !== undefined) {
-      // 2. Si envió una URL existente o cadena vacía "" (cuando borra la foto)
-      const currentUrl = String(updates.imagenUrl).trim();
-      item.imagenUrl = currentUrl;
-      item.images = currentUrl ? [currentUrl] : [];
+      // Caso B: Si viene 'imagenUrl' desde req.body (URL previa o "" si la borró)
+      const cleanUrl = String(updates.imagenUrl).trim();
+      item.imagenUrl = cleanUrl;
+      item.images = cleanUrl ? [cleanUrl] : [];
+    } else if (updates.existingImages !== undefined) {
+      // Caso C: Si viene como 'existingImages'
+      try {
+        const parsed = typeof updates.existingImages === "string" 
+          ? JSON.parse(updates.existingImages) 
+          : updates.existingImages;
+        const validList = Array.isArray(parsed) ? parsed : [];
+        item.imagenUrl = validList.length > 0 ? validList[0] : "";
+        item.images = validList;
+      } catch (e) {
+        item.imagenUrl = "";
+        item.images = [];
+      }
     }
 
     const updatedInventory = await item.save();
 
-    res.status(200).json(updatedInventory);
+    return res.status(200).json(updatedInventory);
   } catch (error) {
     console.error("Error al actualizar el inventario:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Error al actualizar el inventario",
       error: error.message,
     });
