@@ -196,46 +196,33 @@ inventoryController.updateInventory = async (req, res) => {
       item.observaciones = updates.observaciones.trim();
     }
 
-    // 3. CAPTURA DE ARCHIVO FÍSICO SUBIDO (Evita Error 500 en Multer)
-    let uploadedFile = req.file;
-    if (!uploadedFile && req.files) {
-      if (Array.isArray(req.files) && req.files.length > 0) {
-        uploadedFile = req.files[0];
-      } else if (typeof req.files === "object") {
-        const keys = Object.keys(req.files);
-        if (keys.length > 0 && Array.isArray(req.files[keys[0]]) && req.files[keys[0]].length > 0) {
-          uploadedFile = req.files[keys[0]][0];
-        }
-      }
+   let uploadedFile = req.file;
+if (!uploadedFile && req.files) {
+  if (Array.isArray(req.files) && req.files.length > 0) {
+    uploadedFile = req.files[0];
+  } else if (typeof req.files === "object") {
+    const keys = Object.keys(req.files);
+    if (keys.length > 0 && Array.isArray(req.files[keys[0]]) && req.files[keys[0]].length > 0) {
+      uploadedFile = req.files[keys[0]][0];
     }
+  }
+}
 
-    // 4. LÓGICA UNIFICADA DE IMAGEN (ACTUALIZAR AMBOS CAMPOS 'images' Y 'imagenUrl')
-    if (uploadedFile) {
-      // Caso A: Se envió una foto nueva física -> Subir a Cloudinary
-      const uploadedUrl = await uploadImageToCloudinary(uploadedFile);
-      if (uploadedUrl) {
-        item.imagenUrl = uploadedUrl;
-        item.images = [uploadedUrl];
-      }
-    } else if (updates.imagenUrl !== undefined) {
-      // Caso B: Si viene 'imagenUrl' desde req.body (URL previa o "" si la borró)
-      const cleanUrl = String(updates.imagenUrl).trim();
-      item.imagenUrl = cleanUrl;
-      item.images = cleanUrl ? [cleanUrl] : [];
-    } else if (updates.existingImages !== undefined) {
-      // Caso C: Si viene como 'existingImages'
-      try {
-        const parsed = typeof updates.existingImages === "string" 
-          ? JSON.parse(updates.existingImages) 
-          : updates.existingImages;
-        const validList = Array.isArray(parsed) ? parsed : [];
-        item.imagenUrl = validList.length > 0 ? validList[0] : "";
-        item.images = validList;
-      } catch (e) {
-        item.imagenUrl = "";
-        item.images = [];
-      }
-    }
+// 4. LÓGICA DE IMAGEN ÚNICA (Solo imagenUrl)
+if (uploadedFile) {
+  // Caso A: Se subió un archivo físico -> Subir a Cloudinary
+  const uploadedUrl = await uploadImageToCloudinary(uploadedFile);
+  if (uploadedUrl) {
+    item.imagenUrl = uploadedUrl;
+    item.images = undefined; // Opcional: limpia la propiedad si existía en Mongo
+  }
+} else if (updates.imagenUrl !== undefined) {
+  // Caso B: Se envió 'imagenUrl' desde req.body
+  // Si la borraste en el modal llegará "" -> guarda ""
+  // Si mantienes la previa llegará "https://..." -> guarda la URL
+  item.imagenUrl = String(updates.imagenUrl).trim();
+  item.images = undefined;
+}
 
     const updatedInventory = await item.save();
 

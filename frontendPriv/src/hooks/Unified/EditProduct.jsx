@@ -207,21 +207,16 @@ const EditProduct = ({ productId, onClose, refreshProducts }) => {
       form.append("costoTransporte", convertToNumber(formData.costoTransporte));
       form.append("precioFinal", convertToNumber(formData.precioFinal));
 
-      if (!previewImage) {
-  // 1. SI SE ELIMINÓ LA IMAGEN EN EL MODAL:
+  if (!previewImage) {
+  // 1. Si se eliminó la imagen en el modal
   form.append("imagenUrl", "");
-  form.append("existingImages", JSON.stringify([]));
 } else if (!previewImage.isNew) {
-  // 2. SI MANTIENE LA IMAGEN PREVIA:
+  // 2. Si mantiene la imagen previa existente
   form.append("imagenUrl", previewImage.url);
-  form.append("existingImages", JSON.stringify([previewImage.url]));
 } else {
-  // 3. SI REEMPLAZÓ POR UNA FOTO NUEVA DESDE SU DISPOSITIVO:
+  // 3. Si subió una foto nueva desde su dispositivo
   form.append("imagenUrl", "");
-  form.append("existingImages", JSON.stringify([]));
-  form.append("image", previewImage.file);
-  form.append("images", previewImage.file);
-  form.append("file", previewImage.file);
+  form.append("image", previewImage.file); // Un solo campo para Multer
 }
 
       const res = await fetch(
