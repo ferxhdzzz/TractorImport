@@ -5,7 +5,7 @@ import SubTitulo from "../components/Componte-hook/SubTitulo";
 import Sidebar from "../components/Sidebar/Sidebar";
 import Topbar from "../components/TopBar/TopBar";
 import EditCustomer from "../hooks/Unified/EditCustomers";
-import AddCustomer from "../hooks/Unified/AddCustomer"; // Ajusta esta ruta según la ubicación real de tu modal
+import AddCustomer from "../hooks/Unified/AddCustomer";
 import useFetchCustomers from "../hooks/Customers/useFetchCustomers";
 import useCustomerAction from "../hooks/Customers/useCustomerAction";
 
@@ -30,6 +30,21 @@ const Customers = () => {
     });
   };
 
+  // Extraer nombres de las maquinarias compradas (maneja arreglos u objeto único por compatibilidad)
+  const getMachineryListNames = (maquinaria) => {
+    if (Array.isArray(maquinaria)) {
+      return maquinaria.map((m) =>
+        typeof m === "object" && m !== null
+          ? m.nombreMaquinaria || m.name || "Sin nombre"
+          : String(m)
+      );
+    }
+    if (typeof maquinaria === "object" && maquinaria !== null) {
+      return [maquinaria.nombreMaquinaria || maquinaria.name || "Sin nombre"];
+    }
+    return [String(maquinaria || "Sin asignación")];
+  };
+
   // Lógica de filtrado por búsqueda (Cliente, Maquinaria o Fecha)
   const filteredCustomers = safeCustomers.filter((item) => {
     const term = searchTerm.toLowerCase().trim();
@@ -38,12 +53,11 @@ const Customers = () => {
     // 1. Coincidencia por Nombre de Cliente
     const matchesClient = item.nombreCliente?.toLowerCase().includes(term);
 
-    // 2. Coincidencia por Nombre de Maquinaria
-    const machineryName =
-      typeof item.maquinariaComprada === "object" && item.maquinariaComprada !== null
-        ? item.maquinariaComprada?.nombreMaquinaria || item.maquinariaComprada?.name
-        : String(item.maquinariaComprada || "");
-    const matchesMachinery = machineryName?.toLowerCase().includes(term);
+    // 2. Coincidencia por Nombre de Maquinaria (revisa todas las maquinarias del arreglo)
+    const machineryNames = getMachineryListNames(item.maquinariaComprada);
+    const matchesMachinery = machineryNames.some((name) =>
+      name.toLowerCase().includes(term)
+    );
 
     // 3. Coincidencia por Fecha de Compra
     const formattedDate = item.fechaCompra
@@ -53,7 +67,8 @@ const Customers = () => {
           day: "2-digit",
         })
       : "";
-    const matchesDate = formattedDate.includes(term) || String(item.fechaCompra || "").includes(term);
+    const matchesDate =
+      formattedDate.includes(term) || String(item.fechaCompra || "").includes(term);
 
     return matchesClient || matchesMachinery || matchesDate;
   });
@@ -103,10 +118,12 @@ const Customers = () => {
         <div className="customer-container">
           <div className="customer-header">
             <Titulo>Gestión de Clientes y Ventas</Titulo>
-            <SubTitulo>Administra las ventas realizadas, pagos de abonos y saldos remanentes</SubTitulo>
+            <SubTitulo>
+              Administra las ventas realizadas, pagos de abonos y saldos remanentes
+            </SubTitulo>
           </div>
 
-          {/* Barra Superior: Botón para Abrir Modal Agregar Cliente y Búsqueda */}
+          {/* Barra Superior */}
           <div
             className="land-top-actions"
             style={{ display: "flex", gap: "15px", marginBottom: "20px", alignItems: "center" }}
@@ -142,7 +159,6 @@ const Customers = () => {
               </div>
             ) : (
               filteredCustomers.map((item) => {
-                // Formateo de fechas
                 const fechaCompraFormateada = item.fechaCompra
                   ? new Date(item.fechaCompra).toLocaleDateString("es-SV", {
                       year: "numeric",
@@ -159,15 +175,12 @@ const Customers = () => {
                     })
                   : "N/A";
 
-                const maquinariaNombre =
-                  typeof item.maquinariaComprada === "object" && item.maquinariaComprada !== null
-                    ? item.maquinariaComprada.nombreMaquinaria || item.maquinariaComprada.name || "Sin nombre"
-                    : "ID: " + String(item.maquinariaComprada || "No asignada");
-
-                const numContenedor =
-                  typeof item.maquinariaComprada === "object" && item.maquinariaComprada?.numeroContenedor
-                    ? ` (Contenedor: ${item.maquinariaComprada.numeroContenedor})`
-                    : "";
+                // Normalizar la lista de maquinarias (objetos populados)
+                const listMaquinarias = Array.isArray(item.maquinariaComprada)
+                  ? item.maquinariaComprada
+                  : item.maquinariaComprada
+                  ? [item.maquinariaComprada]
+                  : [];
 
                 return (
                   <div key={item._id} className="customer-card">
@@ -177,18 +190,49 @@ const Customers = () => {
                       <span className="customer-date-badge">Venta: {fechaCompraFormateada}</span>
                     </div>
 
-                    {/* Contenido en Grid Parejo */}
+                    {/* Contenido */}
                     <div className="customer-card-grid">
                       <div className="customer-data-block">
                         <p>
-                          <strong>Maquinaria Comprada:</strong>
+                          <strong>Maquinaria(s) Comprada(s):</strong>
                         </p>
-                        <p>{maquinariaNombre} {numContenedor}</p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
+                          {listMaquinarias.length > 0 ? (
+                            listMaquinarias.map((m, idx) => {
+                              const nombre =
+                                typeof m === "object" && m !== null
+                                  ? m.nombreMaquinaria || m.name
+                                  : String(m);
+                              const contenedor =
+                                typeof m === "object" && m?.numeroContenedor
+                                  ? ` (Cont: ${m.numeroContenedor})`
+                                  : "";
+
+                              return (
+                                <span
+                                  key={idx}
+                                  style={{
+                                    backgroundColor: "#e2e8f0",
+                                    color: "#1e293b",
+                                    padding: "3px 10px",
+                                    borderRadius: "12px",
+                                    fontSize: "0.82rem",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {nombre} {contenedor}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            <p style={{ margin: 0, color: "#94a3b8" }}>Sin maquinaria asociada</p>
+                          )}
+                        </div>
                       </div>
 
                       <div className="customer-data-block">
                         <p>
-                          <strong>Precio Final:</strong>
+                          <strong>Precio Final Total:</strong>
                         </p>
                         <p style={{ color: "#059669", fontWeight: "700", fontSize: "1.05rem" }}>
                           ${formatCurrency(item.precioFinal)}
