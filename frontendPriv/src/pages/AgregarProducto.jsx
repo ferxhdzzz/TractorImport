@@ -18,8 +18,10 @@ export default function AddInventoryPage() {
     impuestoPagado: "",
     costoTransporte: "",
     observaciones: "",
-    images: [],
   });
+
+  // Estado para manejar UNA SOLA imagen física
+  const [imageFile, setImageFile] = useState(null);
 
   const handleOpenPicker = () => {
     if (fechaCompraRef.current) {
@@ -40,7 +42,7 @@ export default function AddInventoryPage() {
     }));
   };
 
-  // Convertir un número formateado como "13,000.50" a valor numérico puro 13000.50
+  // Convertir número formateado con comas (Ej: "13,000.50" -> 13000.5)
   const convertToNumber = (value) => {
     if (value === undefined || value === null || value === "") return 0;
     return Number(String(value).replace(/,/g, "")) || 0;
@@ -63,7 +65,7 @@ export default function AddInventoryPage() {
       : integerPart;
   };
 
-  // Formatear campos numéricos con comas
+  // Formatear campos numéricos con comas en tiempo real
   const handleNumberInputChange = (e) => {
     const { name, value } = e.target;
 
@@ -99,23 +101,20 @@ export default function AddInventoryPage() {
   const transporte = convertToNumber(formData.costoTransporte);
   const precioFinalCalculado = costoMaq + impuesto + transporte;
 
+  // Seleccionar la imagen única
   const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...files],
-    }));
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+    }
   };
 
-  const handleRemoveImage = (indexToRemove) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, index) => index !== indexToRemove),
-    }));
+  // Remover la imagen seleccionada
+  const handleRemoveImage = () => {
+    setImageFile(null);
   };
 
-  // Función para evitar el desfase de 1 día por conversión de zona horaria / UTC
+  // Evitar desfase de días por zona horaria UTC
   const formatLocalDate = (dateString) => {
     if (!dateString) return null;
 
@@ -162,9 +161,10 @@ export default function AddInventoryPage() {
       formData.observaciones ? formData.observaciones.trim() : ""
     );
 
-    formData.images.forEach((file) => {
-      data.append("images", file);
-    });
+    // Adjuntar la imagen bajo la clave "image" (coincide con upload.single("image"))
+    if (imageFile) {
+      data.append("image", imageFile);
+    }
 
     try {
       await axios.post(
@@ -187,6 +187,7 @@ export default function AddInventoryPage() {
         confirmButtonColor: "#4C8F3F",
       });
 
+      // Resetear formulario
       setFormData({
         nombreMaquinaria: "",
         descripcion: "",
@@ -196,8 +197,8 @@ export default function AddInventoryPage() {
         impuestoPagado: "",
         costoTransporte: "",
         observaciones: "",
-        images: [],
       });
+      setImageFile(null);
     } catch (error) {
       setLoading(false);
 
@@ -229,19 +230,18 @@ export default function AddInventoryPage() {
             <div className="form-row">
               <div className="form-group">
                 <label>Nombre de la Maquinaria</label>
-
                 <input
                   type="text"
                   name="nombreMaquinaria"
                   placeholder="Ej. Tractor John Deere 5075E"
                   value={formData.nombreMaquinaria}
                   onChange={handleInputChange}
+                  required
                 />
               </div>
 
               <div className="form-group">
                 <label>Número de Serie</label>
-
                 <input
                   type="text"
                   name="numeroContenedor"
@@ -254,7 +254,6 @@ export default function AddInventoryPage() {
               {/* Fecha de Compra */}
               <div className="form-group">
                 <label>Fecha de Compra</label>
-
                 <div
                   className="date-input-wrapper"
                   style={{
@@ -299,35 +298,10 @@ export default function AddInventoryPage() {
                       cursor: "pointer",
                     }}
                   >
-                    <rect
-                      x="3"
-                      y="4"
-                      width="18"
-                      height="18"
-                      rx="2"
-                      ry="2"
-                    ></rect>
-
-                    <line
-                      x1="16"
-                      y1="2"
-                      x2="16"
-                      y2="6"
-                    ></line>
-
-                    <line
-                      x1="8"
-                      y1="2"
-                      x2="8"
-                      y2="6"
-                    ></line>
-
-                    <line
-                      x1="3"
-                      y1="10"
-                      x2="21"
-                      y2="10"
-                    ></line>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
                   </svg>
                 </div>
               </div>
@@ -337,7 +311,6 @@ export default function AddInventoryPage() {
               {/* Costo Maquinaria */}
               <div className="form-group">
                 <label>Costo Maquinaria ($)</label>
-
                 <input
                   type="text"
                   inputMode="decimal"
@@ -351,7 +324,6 @@ export default function AddInventoryPage() {
               {/* Impuesto Pagado */}
               <div className="form-group">
                 <label>Impuesto Pagado ($)</label>
-
                 <input
                   type="text"
                   inputMode="decimal"
@@ -365,7 +337,6 @@ export default function AddInventoryPage() {
               {/* Costo Transporte */}
               <div className="form-group">
                 <label>Costo Transporte ($)</label>
-
                 <input
                   type="text"
                   inputMode="decimal"
@@ -376,10 +347,9 @@ export default function AddInventoryPage() {
                 />
               </div>
 
-              {/* Precio Final Calculado Dinámicamente */}
+              {/* Precio Final Calculado */}
               <div className="form-group">
                 <label>Precio Final Calculado ($)</label>
-
                 <input
                   type="text"
                   readOnly
@@ -395,7 +365,6 @@ export default function AddInventoryPage() {
 
             <div className="form-group">
               <label>Descripción</label>
-
               <textarea
                 name="descripcion"
                 className="custom-textarea"
@@ -407,7 +376,6 @@ export default function AddInventoryPage() {
 
             <div className="form-group">
               <label>Observaciones</label>
-
               <textarea
                 name="observaciones"
                 className="custom-textarea"
@@ -418,67 +386,71 @@ export default function AddInventoryPage() {
             </div>
 
             <div className="images-section">
-              <h4>Imágenes</h4>
+              <h4>Imagen de Maquinaria</h4>
 
-              <div className="image-upload-area">
-                <div className="file-input-wrapper">
-                  <input
-                    type="file"
-                    id="images"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                  />
-
-                  <label
-                    htmlFor="images"
-                    className="file-input-label"
+              <div className="image-upload-area" style={{ marginTop: "10px" }}>
+                {!imageFile ? (
+                  <div className="file-input-wrapper">
+                    <input
+                      type="file"
+                      id="singleImageInput"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                    <label htmlFor="singleImageInput" className="file-input-label">
+                      Subir Imagen
+                    </label>
+                  </div>
+                ) : (
+                  <div
+                    className="image-preview-container"
+                    style={{ position: "relative", display: "inline-block" }}
                   >
-                    Subir Imagen
-                  </label>
-                </div>
-
-                {formData.images.length === 0 && (
-                  <div className="image-placeholder">
-                    <span>Vista previa de la imagen</span>
+                    <img
+                      src={URL.createObjectURL(imageFile)}
+                      alt="preview"
+                      className="preview-img"
+                      style={{
+                        width: "150px",
+                        height: "150px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid #cbd5e1",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="remove-image-btn"
+                      onClick={handleRemoveImage}
+                      style={{
+                        position: "absolute",
+                        top: "6px",
+                        right: "6px",
+                        background: "rgba(220, 53, 69, 0.9)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "26px",
+                        height: "26px",
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                      }}
+                    >
+                      ×
+                    </button>
                   </div>
                 )}
               </div>
-
-              {formData.images.length > 0 && (
-                <div className="preview">
-                  {formData.images.map((file, index) => (
-                    <div
-                      key={index}
-                      className="image-preview-container"
-                    >
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={`preview-${index}`}
-                        className="preview-img"
-                      />
-
-                      <button
-                        type="button"
-                        className="remove-image-btn"
-                        onClick={() => handleRemoveImage(index)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             <button
               type="submit"
               disabled={loading}
               className="prod"
+              style={{ marginTop: "20px" }}
             >
-              {loading
-                ? "Guardando..."
-                : "Guardar Maquinaria"}
+              {loading ? "Guardando..." : "Guardar Maquinaria"}
             </button>
           </form>
         </div>

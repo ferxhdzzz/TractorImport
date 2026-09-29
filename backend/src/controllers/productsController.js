@@ -90,30 +90,25 @@ inventoryController.createInventory = async (req, res) => {
   } = req.body;
 
   try {
-    // Manejo seguro de valores numéricos opcionales
     const costoNum = costoMaquinaria != null && costoMaquinaria !== "" ? Number(costoMaquinaria) || 0 : 0;
     const impuestoNum = Number(impuestoPagado) || 0;
     const transporteNum = Number(costoTransporte) || 0;
 
-    // Validación opcional de rango solo si el costo viene especificado y es negativo
     if (costoNum < 0) {
       return res.status(400).json({
         message: "El costo de la maquinaria debe ser un número mayor o igual a 0",
       });
     }
 
-    let uploadedImages = [];
+    // MANEJO DE UNA SOLA IMAGEN
+    let imageUrl = "";
 
-    if (req.files && req.files.length > 0) {
-      const uploadPromises = req.files.map((file) =>
-        uploadImageToCloudinary(file)
-      );
-      uploadedImages = await Promise.all(uploadPromises);
-    } else if (req.file) {
-      const singleUrl = await uploadImageToCloudinary(req.file);
-      if (singleUrl) uploadedImages.push(singleUrl);
+    if (req.file) {
+      // Subir el archivo físico procesado por upload.single("image")
+      const uploadedUrl = await uploadImageToCloudinary(req.file);
+      if (uploadedUrl) imageUrl = uploadedUrl;
     } else if (req.body.imagenUrl) {
-      uploadedImages.push(req.body.imagenUrl);
+      imageUrl = req.body.imagenUrl.trim();
     }
 
     const finalValue =
@@ -131,8 +126,7 @@ inventoryController.createInventory = async (req, res) => {
       costoTransporte: transporteNum,
       precioFinal: isNaN(finalValue) ? 0 : finalValue,
       observaciones: observaciones ? observaciones.trim() : "",
-      images: uploadedImages,
-      imagenUrl: uploadedImages[0] || "",
+      imagenUrl: imageUrl,
     });
 
     const savedInventory = await newInventory.save();
